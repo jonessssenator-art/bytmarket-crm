@@ -1,0 +1,138 @@
+{
+  "repository": "atmosferaprintt/print360-prototype",
+  "commit": "657b1fb62f47af71443c3788904173843a2bc155",
+  "files": [
+    {
+      "file": "ui/index.jsx",
+      "source_sha256": "795fdc075077b40c89ea027923b39dbcffa7f99cd37d1a73e089fefb459ca5d2"
+    },
+    {
+      "file": "ui/ui.css",
+      "source_sha256": "19870ac12cc30691b9f69755fc7b1858a0a0159874f136bba1f929f85fff30bc"
+    },
+    {
+      "file": "ui/tokens.js",
+      "source_sha256": "1444503ddd9ef2fe7cf9c2d26c9720cba4ddcc25e0da918f208831b1e8207498"
+    },
+    {
+      "file": "ui/icons.jsx",
+      "source_sha256": "698c6e44d7fe84e507626cf807beff1ff2abc66daf71b701314185475f368006"
+    },
+    {
+      "file": "ui/iconSet.jsx",
+      "source_sha256": "036c5d4b71d57be87dcf3fa69d7a2b29954ac95587c6ec4fc3829d9638efdeb0"
+    },
+    {
+      "file": "ui/emojiMap.js",
+      "source_sha256": "f40eb8218cfe8bd0f033241262f195b540cb6807195260114d1af11ee678b864"
+    },
+    {
+      "file": "ui/SocialGlyphs.jsx",
+      "source_sha256": "ce1d19e0b5b383746f46256d88759e4601d9248639d231faddb4283930f277ff"
+    },
+    {
+      "file": "ui/Wordmark.jsx",
+      "source_sha256": "f92f4ab51e6d950a1661e34989e17e7084b3bd34cf267f3d79513a413d29bcf9"
+    },
+    {
+      "file": "ui/theme/tokens.css",
+      "source_sha256": "e9eebf216494d0f0709039a3c1b1933b423a6896b08f25bb586ccb649133a0da"
+    },
+    {
+      "file": "ui/motion/motion.css",
+      "source_sha256": "05677795a90a07c545f177cfb1724f2de1e91a7962ecd92bfa5ac28ce75bfdaa"
+    },
+    {
+      "file": "ui/motion/useInView.js",
+      "source_sha256": "ce1a0eb9fc1b74067a53a28f5c3700ee2079b83b286e3ab2796f6251cf712f8e"
+    },
+    {
+      "file": "ui/motion/useCountUp.js",
+      "source_sha256": "b3a90db3fb93ae382754107748897e7aa8d7a0f917552304955ebb4dcfc55424"
+    },
+    {
+      "file": "ui/motion/useMotionPref.js",
+      "source_sha256": "96289cebb9e91f164cac7098c27bdd3e122642db006907cde4a7ef44c347b5c3"
+    },
+    {
+      "file": "ui/fx/GlowTile.jsx",
+      "source_sha256": "ae4f7606583a06f37c347c22e0a532ddc0a6fd8fcef9b8356f427c211cdbf636"
+    },
+    {
+      "file": "ui/fx/Num.jsx",
+      "source_sha256": "600feb02198b91ef7559eeae1b93d0504ec44aa873bb731d666d54395e585a28"
+    },
+    {
+      "file": "ui/fx/numFormat.js",
+      "source_sha256": "9864991be462e00d6257c2ab695a6516c946c829c28e618cace4f12b8c5c8871"
+    },
+    {
+      "file": "ui/fx/fx.css",
+      "source_sha256": "0fe4891c526ca6074d2d938dcdc84a5e971a30a62633e802b06e4e24f8154964"
+    },
+    {
+      "file": "ui/fx/GlassPanel.jsx",
+      "source_sha256": "065c023fe3f12056eb8b6c32cb1788f1f5eedb0cc9f45674392d23ed2b1ccab8"
+    },
+    {
+      "file": "ui/fx/DarkPlate.jsx",
+      "source_sha256": "ac5f11fdf0561e609ccbbc86bb6f96a5471a99fdd3f07a41bbfe00859144693a"
+    },
+    {
+      "file": "shell/AppNav.jsx",
+      "source_sha256": "531e255f904859230b8d5712f6ac90acfb27771fe829d749bd3f60e343d5f029"
+    },
+    {
+      "file": "shell/NavMark.jsx",
+      "source_sha256": "f4236c0290bfe9a4840d7bfb7d4f1e21820d09ed621bae8233d3b9a48a9755d4"
+    },
+    {
+      "file": "shell/nav.css",
+      "source_sha256": "8cb8d06538256b37da681410a20c9a6347ffff8ac0b66cf2242e1fe975ad7251"
+    },
+    {
+      "file": "shell/navBus.js",
+      "source_sha256": "d06d82c8297c0dc05644789ad840457d7445923fef434a4d8b71f5d1219d7d89"
+    },
+    {
+      "file": "shell/navColors.js",
+      "source_sha256": "ea20f3ed0a9e6d026d72d766fdb65119bd40bade7b92d6b47195fc6062c8e9bc"
+    },
+    {
+      "file": "shell/shellIcons.jsx",
+      "source_sha256": "3880f61bb0bbfdb40c2e2dcf9670cfbb4cc357edbae30beda4b770d42b4c44ef"
+    },
+    {
+      "file": "shell/useEdgeReveal.js",
+      "source_sha256": "d53e33b96b6dd665f43ea591a3f5b6d8af0b464c52a83c5b3197abd6cae07905"
+    },
+    {
+      "file": "ui/kit/Table.jsx",
+      "source_sha256": "5a0d1b7d1b2cca7ed677d8c4e8e217f466c63b5346b8481626861ad7a86c7150"
+    },
+    {
+      "file": "ui/kit/KitIcon.jsx",
+      "source_sha256": "de5d23aec9fd6f6b98085eaa9efc7359ddf5ef04beaa877864d3a7c1916bec1a"
+    },
+    {
+      "file": "ui/kit/Feedback.jsx",
+      "source_sha256": "f2d1ea1782c9bcb7e490d692d1a3393c25bc687359ba66ec1f55983efc07f95e"
+    },
+    {
+      "file": "ui/kit/hooks.js",
+      "source_sha256": "3dc791d14ec8ee70900a4001dfb49343977240d6d568b3a6e127916b517106dd"
+    },
+    {
+      "file": "ui/kit/kit.css",
+      "source_sha256": "a415b7300bb30ce900df55d2aa2519a1ce5027835b9c4b869d3c4e481461acb1"
+    },
+    {
+      "file": "crm/HeaderSlot.jsx",
+      "source_sha256": "2ae5e08153a9745436f721416bf41054a287aa880bcd37d7a9c163dff2d9a9a9"
+    },
+    {
+      "file": "crm/headStore.js",
+      "source_sha256": "2c0e4b678b97fa99f29b513a67b1f66f90034d8a1b9a730486f095858ee15677"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.playwright-cli/
+output/playwright/
+*.log
+.DS_Store
+
+dist/
+data/
+backups/
+.env.local
+output/runtime-test/
+
+# Local exports and runtime databases never belong in the source repository.
+output/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

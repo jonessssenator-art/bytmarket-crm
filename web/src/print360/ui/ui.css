@@ -1,0 +1,185 @@
+/* Print 360 — базовые компоненты (Button, Segmented, Chip, поля, Card, Avatar, Toggle, Checkbox, Modal).
+   Цвета, тени и слои — ТОЛЬКО токены темы (theme/tokens.css). Размеры прежние: меняется только краска.
+   Классы ui-* сохранены — их используют и старые экраны. */
+@import './theme/tokens.css';
+@import './motion/motion.css';
+
+/* ---------- Кнопки: primary · dark · soft · white (= secondary) · ghost · danger; размеры sm · md · lg ---------- */
+.ui-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 20px; border: 0; border-radius: var(--p-r-full);
+  font-family: var(--p-font); font-size: var(--p-fs-xs); font-weight: 700; line-height: 1;
+  white-space: nowrap; cursor: pointer; text-decoration: none; -webkit-tap-highlight-color: transparent;
+  transition: background-color .2s ease, box-shadow .25s ease, transform .14s ease, color .2s ease, opacity .2s ease;
+}
+.ui-btn > svg { flex-shrink: 0; }
+.ui-btn:active:not(:disabled) { transform: scale(.97); }
+.ui-btn:focus-visible { outline: 2px solid var(--p-focus); outline-offset: 2px; }
+.ui-btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.ui-btn--primary { background: var(--p-accent); color: var(--p-on-accent); box-shadow: var(--p-btn-primary-shadow); }
+.ui-btn--primary:hover:not(:disabled) { background: var(--p-accent-hover); box-shadow: var(--p-btn-primary-shadow-hover); }
+.ui-btn--dark { background: var(--p-seg-on); color: var(--p-seg-on-ink); }
+.ui-btn--dark:hover:not(:disabled) { background: var(--p-seg-on-hover); }
+.ui-btn--soft { background: var(--p-field); color: var(--p-ink); box-shadow: inset 0 0 0 1px var(--p-field-rim); }
+.ui-btn--soft:hover:not(:disabled) { background: var(--p-field-hover); }
+.ui-btn--white, .ui-btn--secondary { background: var(--p-btn2-bg); color: var(--p-ink); box-shadow: inset 0 0 0 1px var(--p-btn2-rim), var(--p-btn2-shadow); }
+.ui-btn--white:hover:not(:disabled), .ui-btn--secondary:hover:not(:disabled) { background: var(--p-btn2-hover); }
+.ui-btn--ghost { background: transparent; color: var(--p-ink-2); }
+.ui-btn--ghost:hover:not(:disabled) { background: var(--p-sub-hover); color: var(--p-ink); }
+.ui-btn--danger { background: transparent; color: var(--p-bad); }
+.ui-btn--danger:hover:not(:disabled) { background: var(--p-bad-soft); }
+.ui-btn--sm { height: 30px; padding: 0 14px; font-size: var(--p-fs-cap); }
+.ui-btn--lg { height: 46px; padding: 0 24px; font-size: var(--p-fs-sm); }
+/* кнопка-иконка: иконка строго по центру, без внутренних отступов */
+.ui-btn--icon { width: 40px; padding: 0; }
+.ui-btn--icon.ui-btn--sm { width: 30px; }
+.ui-btn--icon.ui-btn--lg { width: 46px; }
+.ui-btn--block { width: 100%; }
+
+/* ---------- Поля ---------- */
+.ui-label { display: block; font-size: var(--p-fs-cap); font-weight: 700; color: var(--p-muted); margin: 0 0 6px 16px; }
+.ui-field {
+  display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 16px;
+  border-radius: var(--p-r-full); background: var(--p-field); color: var(--p-ink);
+  box-shadow: inset 0 0 0 1px var(--p-field-rim);
+  transition: box-shadow .2s ease, background-color .2s ease; min-width: 0;
+}
+.ui-field > svg { color: var(--p-ink-2); }
+.ui-field:focus-within { background: var(--p-surface); box-shadow: inset 0 0 0 1px var(--p-field-rim), 0 0 0 2px var(--p-focus); }
+.ui-field input, .ui-field select {
+  flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; padding: 0;
+  font-family: var(--p-font); font-size: var(--p-fs-xs); font-weight: 600; color: var(--p-ink);
+}
+.ui-field input:focus-visible, .ui-field select:focus-visible { outline: none; }
+.ui-field input::placeholder { color: var(--p-muted); font-weight: 500; opacity: 1; }
+.ui-field select { appearance: none; cursor: pointer; }
+.ui-field--sm { height: 36px; padding: 0 14px; }
+.ui-textarea {
+  width: 100%; box-sizing: border-box; min-height: 76px; resize: vertical; border: 0; outline: 0;
+  border-radius: var(--p-r-md); background: var(--p-field); padding: 12px 16px;
+  box-shadow: inset 0 0 0 1px var(--p-field-rim);
+  font-family: var(--p-font); font-size: var(--p-fs-sm); color: var(--p-ink); transition: box-shadow .2s ease, background-color .2s ease;
+}
+.ui-textarea::placeholder { color: var(--p-muted); opacity: 1; }
+.ui-textarea:focus { background: var(--p-surface); box-shadow: inset 0 0 0 1px var(--p-field-rim), 0 0 0 2px var(--p-focus); }
+.ui-textarea:focus-visible { outline: none; }
+
+/* ---------- Переключатель вкладок: «бегущая таблетка» (позицию ставит Segmented в index.jsx) ---------- */
+.ui-seg {
+  position: relative; isolation: isolate; display: inline-flex; max-width: 100%; padding: 4px; gap: 2px;
+  border-radius: var(--p-r-full); background: var(--p-seg-bg); box-shadow: inset 0 0 0 1px var(--p-seg-rim);
+  -webkit-backdrop-filter: var(--p-chrome-blur); backdrop-filter: var(--p-chrome-blur);
+}
+.ui-seg > button {
+  position: relative; z-index: 1; height: 34px; padding: 0 16px; border: 0; border-radius: var(--p-r-full); background: transparent;
+  font-family: var(--p-font); font-size: var(--p-fs-xs); font-weight: 700; color: var(--p-seg-ink); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; min-width: 0;
+  transition: color .2s ease, background-color .2s ease;
+}
+.ui-seg > button:hover:not(.on) { color: var(--p-ink); }
+.ui-seg > button.on { color: var(--p-seg-on-ink); }
+.ui-seg > button:focus-visible { outline: 2px solid var(--p-focus); outline-offset: 1px; }
+.ui-seg > button > .ui-seg__count {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box;
+  border-radius: var(--p-r-full); background: var(--p-field); color: var(--p-ink); font-size: 10.5px; font-weight: 800;
+}
+.ui-seg > button.on > .ui-seg__count { background: var(--p-seg-on-sub); color: inherit; }
+/* пока таблетка не измерена (первый кадр, нет JS) — подсвечиваем саму кнопку */
+.ui-seg:not([data-pill="on"]) > button.on { background: var(--p-seg-on); box-shadow: var(--p-seg-on-shadow); }
+.ui-seg__pill {
+  position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: 0; border-radius: var(--p-r-full);
+  background: var(--p-seg-on); box-shadow: var(--p-seg-on-shadow); pointer-events: none; opacity: 0;
+  transition: transform .38s var(--p-spring), width .38s var(--p-spring), opacity .15s ease;
+}
+.ui-seg[data-pill="on"] > .ui-seg__pill { opacity: 1; }
+.ui-seg--sm > button { height: 28px; padding: 0 12px; font-size: var(--p-fs-cap); }
+.ui-seg--white { background: var(--p-surface); box-shadow: var(--p-sh-card); }
+.ui-seg--field { background: var(--p-field); box-shadow: inset 0 0 0 1px var(--p-field-rim); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.ui-seg--dark { background: rgba(255,255,255,.08); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.ui-seg--dark > button { color: var(--p-on-plate-muted); }
+.ui-seg--dark > button:hover:not(.on) { color: var(--p-on-plate); }
+.ui-seg--dark > button.on { color: var(--p-on-accent); }
+.ui-seg--dark > .ui-seg__pill, .ui-seg--dark:not([data-pill="on"]) > button.on { background: var(--p-accent); box-shadow: none; }
+
+/* ---------- Плашки ---------- */
+.ui-chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px;
+  border-radius: var(--p-r-full); font-size: var(--p-fs-cap); font-weight: 700; white-space: nowrap; line-height: 1;
+}
+.ui-chip { max-width: 100%; min-width: 0; }
+.ui-chip > svg { flex-shrink: 0; }
+/* текст плашки сжимается с многоточием, а не переносится */
+.ui-chip__t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-chip--sm { height: 20px; padding: 0 8px; font-size: 10px; gap: 4px; }
+.ui-chip--neutral { background: var(--p-field); color: var(--p-ink-2); }
+.ui-chip--ok { background: var(--p-ok-soft); color: var(--p-ok); }
+.ui-chip--bad { background: var(--p-bad-soft); color: var(--p-bad); }
+.ui-chip--warn { background: var(--p-warn-soft); color: var(--p-warn); }
+.ui-chip--info { background: var(--p-info-soft); color: var(--p-info); }
+.ui-chip--violet { background: var(--p-violet-soft); color: var(--p-violet); }
+.ui-chip--gold, .ui-chip--accent { background: var(--p-accent-soft); color: var(--p-accent-ink); }
+.ui-chip--deep { background: var(--p-deep-soft); color: var(--p-deep); }
+.ui-chip--solid { background: var(--p-seg-on); color: var(--p-seg-on-ink); }
+.ui-chip--outline { background: transparent; color: var(--p-ink-2); box-shadow: inset 0 0 0 1px var(--p-line-strong); }
+
+/* ---------- Карточки ---------- */
+.ui-card {
+  background: var(--p-panel); -webkit-backdrop-filter: var(--p-panel-blur); backdrop-filter: var(--p-panel-blur);
+  border-radius: var(--p-r-lg); box-shadow: var(--p-panel-shadow), inset 0 0 0 1px var(--p-panel-rim-b);
+  padding: 20px; color: var(--p-ink);
+}
+.ui-card--dark { color: var(--p-ink); }
+.ui-card__title { font-size: var(--p-fs-cap); font-weight: 700; color: var(--p-muted); margin: 0 0 14px; }
+
+/* ---------- Аватарки ---------- */
+.ui-ava {
+  border-radius: 50%; display: inline-grid; place-items: center; flex-shrink: 0;
+  font-weight: 800; color: #FFFFFF; letter-spacing: 0; line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,.18);
+}
+
+/* ---------- Тумблер и галочка ---------- */
+.ui-toggle {
+  position: relative; width: 40px; height: 24px; border: 0; padding: 0; border-radius: var(--p-r-full);
+  background: var(--p-toggle-off); box-shadow: inset 0 0 0 1px var(--p-toggle-off-rim); cursor: pointer; flex-shrink: 0;
+  transition: background-color .25s ease, box-shadow .25s ease;
+}
+.ui-toggle::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+  background: #FFFFFF; box-shadow: var(--p-knob-shadow); transition: transform .38s var(--p-spring);
+}
+.ui-toggle.on { background: var(--p-accent); box-shadow: var(--p-toggle-on-glow); }
+.ui-toggle.on::after { transform: translateX(16px); }
+.ui-toggle:disabled { opacity: .45; cursor: not-allowed; }
+.ui-toggle:focus-visible { outline: 2px solid var(--p-focus); outline-offset: 2px; }
+.ui-check { position: relative; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: var(--p-fs-sm); color: var(--p-ink); }
+.ui-check__box {
+  width: 20px; height: 20px; border-radius: 6px; border: 1.8px solid var(--p-check-rim);
+  display: grid; place-items: center; color: var(--p-check-on-ink); flex-shrink: 0;
+  transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.ui-check.on .ui-check__box { background: var(--p-check-on); border-color: var(--p-check-on); box-shadow: var(--p-check-on-glow); }
+.ui-check:has(input:focus-visible) .ui-check__box { outline: 2px solid var(--p-focus); outline-offset: 2px; }
+
+/* ---------- Окно ---------- */
+.ui-overlay {
+  position: fixed; inset: 0; z-index: var(--p-z-modal); background: var(--p-overlay);
+  -webkit-backdrop-filter: var(--p-overlay-blur); backdrop-filter: var(--p-overlay-blur);
+  display: flex; align-items: flex-start; justify-content: center; padding: 48px 16px; overflow-y: auto;
+  animation: ui-fade .2s ease-out;
+}
+.ui-modal {
+  position: relative; width: 100%; background: var(--p-modal-bg);
+  -webkit-backdrop-filter: var(--p-modal-blur); backdrop-filter: var(--p-modal-blur);
+  border-radius: var(--p-r-xl); box-shadow: var(--p-sh-modal), inset 0 0 0 1px var(--p-modal-rim);
+  overflow: hidden; font-family: var(--p-font); color: var(--p-ink); animation: ui-pop .34s var(--p-spring);
+}
+.ui-modal__head { display: flex; align-items: flex-start; gap: 14px; padding: 24px 28px 0; }
+.ui-modal__sub { font-size: var(--p-fs-cap); font-weight: 700; color: var(--p-muted); margin-bottom: 4px; }
+.ui-modal__title { margin: 0; font-size: var(--p-fs-xl); font-weight: 800; line-height: 1.25; letter-spacing: -.01em; }
+.ui-modal__close { margin-left: auto; }
+.ui-modal__body { padding: 20px 28px 24px; }
+.ui-modal__foot { display: flex; align-items: center; gap: 10px; padding: 16px 28px; border-top: 1px solid var(--p-line); background: var(--p-modal-foot); }
+.ui-modal__foot .ui-spacer { flex: 1; }
+@keyframes ui-fade { from { opacity: 0; } }
+@keyframes ui-pop { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+@media (prefers-reduced-motion: reduce) { .ui-overlay, .ui-modal { animation: none; } }

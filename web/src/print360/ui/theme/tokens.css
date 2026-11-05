@@ -1,0 +1,429 @@
+/* Print 360 — тема: цвета, слои, движение (src/ui/theme/tokens.css). Подключается ПЕРВЫМ из src/ui/ui.css.
+   Пресеты (атрибут на <html>, можно и на любой обёртке — для превью):
+     data-theme="light"   — «Светлая со свечением», вариант B макета print360-v2-variants.html. ПО УМОЛЧАНИЮ (и просто :root).
+     data-theme="aurora"  — «Аврора», тёмная, вариант A макета.
+     data-theme="classic" — «Классика»: цвета Print 360 до 13.10.2026 (зелёный #3E5754 + горчица #D4A33B), старые экраны как раньше.
+     data-theme="paper"   — бумага: счета, выписки, отчёты, PDF. Всегда светлая и спокойная. Плюс @media print.
+   Свой акцент владельца (Настройки → Внешний вид) ставит useTheme.js инлайном на <html> (--p-accent* и --p-nav-active-*).
+   ТОЛЬКО hex / rgba: html2canvas 1.4.1 падает на color-mix() и oklch().
+   Старые имена (--p-sb, --p-gold, --p-canvas, --p-surface…) живут дальше: часть — значения темы, часть — алиасы внизу файла. */
+
+/* ================= Общее для всех тем: шрифт, размеры, слои, кривые, 4 свечения ================= */
+:root {
+  --p-font: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --p-fs-cap: 11px; --p-fs-xs: 12px; --p-fs-sm: 13px; --p-fs-md: 14px; --p-fs-lg: 16px; --p-fs-xl: 20px; --p-fs-2xl: 24px; --p-fs-3xl: 32px;
+  --p-r-sm: 8px; --p-r-md: 14px; --p-r-lg: 24px; --p-r-xl: 28px; --p-r-full: 999px;
+  /* слои: меню < всплывашки < окна < тосты < конфетти */
+  --p-z-nav: 40; --p-z-pop: 60; --p-z-modal: 80; --p-z-toast: 100; --p-z-fx: 120;
+  /* кривые: пружина (меню, переключатели, плитки) и мягкое торможение (графики, появление) */
+  --p-spring: cubic-bezier(.22,1.2,.36,1);
+  --p-out: cubic-bezier(.22,1,.36,1);
+  --p-in: cubic-bezier(.55,0,.8,.3);
+  --p-dur-fast: 160ms; --p-dur: 240ms; --p-dur-slow: 420ms;
+
+  /* 4 светящиеся плитки — одинаковые в любой теме. Смысл закреплён:
+     лайм — пришли деньги, рост, главное; угли — горит, долг, просрочка; небо — производство, в работе; фиолет — дизайн, план.
+     13.10.2026 (правка Раби «слишком яркие, успокоить чуть»): заливки приглушены примерно на 35–40% по насыщенности и яркости —
+     тёмная основа, цвет мягче и уже (у края / внизу); --p-shine-* (цветная тень под плиткой) вдвое слабее.
+     --p-rim-* / --p-edge-* — прежние яркие цвета смысла (ими красят текст, чипы, графики); для канта плиток —
+     --p-rimsoft-* (мягкое свечение у края внутри) и --p-edgesoft-* (тонкая светлая линия края). */
+  --p-glow-lime: radial-gradient(100% 125% at 36% 34%, #0C0F08 0%, #0F1309 44%, #171E0D 68%, #2E3A18 100%);
+  --p-rim-lime: #B8E62E; --p-edge-lime: #E9F7A0; --p-shine-lime: rgba(150,200,30,.26);
+  --p-rimsoft-lime: rgba(184,230,46,.30); --p-edgesoft-lime: rgba(233,247,160,.22);
+  --p-glow-ember: linear-gradient(180deg, #2A1315 0%, #3F1D1B 38%, #5C2B24 62%, #823826 79%, #9C4C2B 91%, #AE5F30 100%);
+  --p-rim-ember: #FF4A1C; --p-edge-ember: #FFA05A; --p-shine-ember: rgba(200,80,40,.26);
+  --p-rimsoft-ember: rgba(255,120,60,.26); --p-edgesoft-ember: rgba(255,170,110,.24);
+  --p-glow-sky: radial-gradient(56% 64% at 62% 88%, rgba(120,182,236,.30) 0%, rgba(120,182,236,0) 70%), linear-gradient(180deg, #24384A 0%, #2B4A68 48%, #2E669C 100%);
+  --p-rim-sky: #5AB4FF; --p-edge-sky: #BFE3FF; --p-shine-sky: rgba(50,120,190,.26);
+  --p-rimsoft-sky: rgba(90,180,255,.28); --p-edgesoft-sky: rgba(191,227,255,.22);
+  --p-glow-violet: radial-gradient(100% 125% at 36% 34%, #2B1636 0%, #341C45 42%, #492858 72%, #653871 100%);
+  --p-rim-violet: #E37FE0; --p-edge-violet: #F09BEA; --p-shine-violet: rgba(140,70,160,.26);
+  --p-rimsoft-violet: rgba(227,127,224,.28); --p-edgesoft-violet: rgba(240,155,234,.22);
+  --p-up: #7CF25A;       /* рост «↑ 12%» внутри плиток */
+  --p-down: #FFA394;     /* падение «↓ 8%» внутри плиток */
+}
+
+/* ================= B «Светлая со свечением» — по умолчанию ================= */
+:root, [data-theme="light"] {
+  color-scheme: light;
+  --p-scene: radial-gradient(60% 70% at 100% 0%, rgba(255,255,255,.9) 0%, rgba(255,255,255,0) 60%),
+             linear-gradient(160deg, #EEF3F5 0%, #E4ECEF 50%, #D7E1E5 100%);
+  --p-page: #DDE6EA;          /* сплошной цвет под фоном — там, где градиент нельзя */
+  --p-canvas: #E8EFF2;        /* сплошная «рабочая область»: вырезы, перфорация, ховер на панели */
+  --p-blob-1: rgba(198,240,42,.20); --p-blob-2: rgba(178,63,196,.10); --p-blob-3: rgba(61,155,245,.14);
+
+  --p-panel: #FFFFFF; --p-panel-blur: none;
+  --p-panel-rim-a: rgba(18,37,44,.07); --p-panel-rim-b: rgba(18,37,44,.05);
+  --p-panel-shadow: 0 1px 2px rgba(18,37,44,.05), 0 16px 36px -24px rgba(18,37,44,.32);
+  --p-surface: #FFFFFF;
+  --p-sub: #F3F6F8; --p-sub-rim: transparent; --p-sub-hover: #EAF0F3;
+  --p-field: #EEF3F5; --p-field-rim: transparent; --p-field-hover: #E5ECEF;
+  --p-chrome: #FFFFFF; --p-chrome-rim: rgba(18,37,44,.07); --p-chrome-blur: none;
+  --p-solid: #FFFFFF; --p-solid-rim: rgba(18,37,44,.06);
+  --p-solid-shadow: drop-shadow(0 10px 16px rgba(18,37,44,.10)) drop-shadow(0 1px 1px rgba(18,37,44,.06));
+
+  --p-ink: #12252C; --p-ink-2: #3F5660; --p-muted: #52676F; --p-faint: #93A5AC;
+  --p-line: #E4EBEE; --p-line-strong: #C6D3D8;
+  --p-link: var(--p-accent-ink); --p-link-hover: var(--p-ink);
+
+  --p-accent: #C6F02A; --p-accent-hover: #B8E41C; --p-on-accent: #0B0F05;
+  --p-accent-ink: #4A6A00; --p-accent-ink-dark: #D9F77A;
+  --p-accent-soft: #EEF8CC; --p-accent-glow: rgba(150,200,10,.50);
+  --p-accent-graphic: #6E9B00; --p-accent-rgb: 198,240,42; --p-focus: #C6F02A;
+
+  --p-ok: #17703C;  --p-ok-soft: #E2F4E8;
+  --p-bad: #B8321F; --p-bad-soft: #FBE6E2;
+  --p-warn: #9C5508; --p-warn-soft: #FCEFDC;
+  --p-info: #1F6FB8; --p-info-soft: #E3EFFA;
+  --p-violet: #8E3FB0; --p-violet-soft: #F4E8FA;
+  --p-deep: #3F5660; --p-deep-soft: #EEF3F5;   /* «Успешно сдан» — спокойная плашка */
+
+  /* виды производства (+ мягкие подложки) */
+  --p-k-paper: #2F86D6; --p-k-film: #6E9B00; --p-k-tissue: #B23FC4; --p-k-ribbon: #F2531F; --p-k-wide: #0E9A8A; --p-k-other: #6F8790;
+  --p-k-paper-soft: rgba(47,134,214,.13); --p-k-film-soft: rgba(110,155,0,.15); --p-k-tissue-soft: rgba(178,63,196,.12);
+  --p-k-ribbon-soft: rgba(242,83,31,.12); --p-k-wide-soft: rgba(14,154,138,.13); --p-k-other-soft: rgba(111,135,144,.14);
+  --p-track: #EAF0F2;
+  /* графики: лайм, небо, фиолет, угли, бирюза, золото, роза, серо-синий (≥3:1 на белом) */
+  --p-chart-1: #6E9B00; --p-chart-2: #2F86D6; --p-chart-3: #9B45C4; --p-chart-4: #E0531F;
+  --p-chart-5: #0E9A8A; --p-chart-6: #B07800; --p-chart-7: #D6457A; --p-chart-8: #5F7D8C;
+
+  /* меню — тёмное стекло */
+  --p-nav-bg: linear-gradient(180deg, rgba(17,32,38,.84), rgba(10,20,25,.90));
+  --p-nav-rim: rgba(255,255,255,.10); --p-nav-ink: #E9F2F4; --p-nav-muted: #A1B4BA; --p-nav-hover: rgba(255,255,255,.07);
+  --p-nav-active-bg: rgba(198,240,42,.13); --p-nav-active-rim: rgba(198,240,42,.36); --p-nav-active-ink: #F3FCD2;
+  --p-nav-shadow: 0 30px 70px -24px rgba(10,24,30,.55);
+  --p-handle-bg: #12252C;
+
+  --p-seg-bg: #FFFFFF; --p-seg-rim: rgba(18,37,44,.07); --p-seg-ink: #4F656D;
+  --p-seg-on: #12252C; --p-seg-on-ink: #FFFFFF; --p-seg-on-sub: rgba(255,255,255,.18); --p-seg-on-hover: #1E3A44;
+  --p-btn2-bg: #FFFFFF; --p-btn2-rim: rgba(18,37,44,.12); --p-btn2-hover: #F3F6F8; --p-btn2-shadow: 0 1px 2px rgba(18,37,44,.05);
+  --p-btn-primary-shadow: 0 10px 26px -10px var(--p-accent-glow), inset 0 1px 0 rgba(255,255,255,.55);
+  --p-btn-primary-shadow-hover: 0 14px 30px -8px var(--p-accent-glow), inset 0 1px 0 rgba(255,255,255,.55);
+  --p-ava-ring: #FFFFFF;
+  --p-ava-1: linear-gradient(140deg, #D2602C, #92270A); --p-ava-2: linear-gradient(140deg, #3F7FD6, #1B4699);
+  --p-ava-3: linear-gradient(140deg, #9B6BE8, #5528A8); --p-ava-4: linear-gradient(140deg, #22A596, #0B5F57);
+  --p-ava-5: linear-gradient(140deg, #C55BCF, #7A1F96); --p-ava-6: linear-gradient(140deg, #6A9A12, #2E5205);
+  --p-seg-on-shadow: 0 6px 16px -8px rgba(0,0,0,.45); --p-knob-shadow: 0 1px 3px rgba(0,0,0,.35);
+  --p-toggle-on-glow: 0 0 12px -2px var(--p-accent-glow); --p-check-on-glow: 0 0 10px -2px var(--p-accent-glow);
+  --p-toggle-off: #E1E9EC; --p-toggle-off-rim: #C6D3D8;
+  --p-check-rim: #93A5AC; --p-check-on: var(--p-accent); --p-check-on-ink: var(--p-on-accent);
+
+  /* тёмная акцентная плашка («План продаж» в варианте B) и старое «тёмное» (--p-sb) */
+  --p-plate: #12252C; --p-plate-deep: #0B191E; --p-on-plate: #F2F7F8; --p-on-plate-muted: rgba(242,247,248,.66);
+  --p-plate-bg: linear-gradient(160deg, #1A353D 0%, #11252C 58%, #0C1C22 100%);
+  --p-plate-rim-a: rgba(255,255,255,.22); --p-plate-rim-b: rgba(255,255,255,.04);
+  --p-plate-shadow: 0 24px 44px -24px rgba(12,28,34,.7);
+
+  /* окна, всплывашки, подсказки графиков */
+  --p-overlay: rgba(14,30,36,.34); --p-overlay-blur: blur(6px) saturate(120%);
+  --p-modal-bg: #FFFFFF; --p-modal-blur: none; --p-modal-rim: rgba(18,37,44,.06); --p-modal-foot: #F6F9FA;
+  --p-pop-bg: #FFFFFF; --p-pop-blur: none; --p-pop-rim: rgba(18,37,44,.08);
+  --p-tip-bg: #12252C; --p-tip-ink: #F2F7F8; --p-tip-muted: #A9BCC2;
+  --p-sh-card: 0 1px 2px rgba(18,37,44,.05), 0 10px 26px -20px rgba(18,37,44,.30);
+  --p-sh-pop: 0 2px 6px rgba(18,37,44,.06), 0 22px 44px -18px rgba(18,37,44,.34);
+  --p-sh-modal: 0 0 0 1px rgba(18,37,44,.05), 0 44px 110px -30px rgba(12,28,34,.50);
+  --p-spot: rgba(150,200,10,.14); --p-spot-rim: rgba(110,155,0,.55);
+  --p-skel: #EDF2F4; --p-skel-hi: #F8FAFB;
+}
+
+/* ================= A «Аврора» — полностью тёмная ================= */
+[data-theme="aurora"] {
+  color-scheme: dark;
+  --p-scene: radial-gradient(75% 95% at 0% 64%, rgba(6,11,13,.88) 0%, rgba(6,11,13,0) 70%),
+             linear-gradient(56deg, #0F1A1E 0%, #16242A 26%, #263A41 44%, #3F5961 62%, #55707A 78%, #8197A0 91%, #A9BAC0 100%);
+  --p-page: #0B1519;
+  --p-canvas: #102026;
+  --p-blob-1: rgba(198,240,42,.10); --p-blob-2: rgba(178,63,196,.17); --p-blob-3: rgba(61,155,245,.14);
+
+  --p-panel: linear-gradient(180deg, rgba(24,40,46,.66), rgba(12,23,28,.74));
+  --p-panel-blur: blur(26px) saturate(150%);
+  --p-panel-rim-a: rgba(255,255,255,.24); --p-panel-rim-b: rgba(255,255,255,.04);
+  --p-panel-shadow: 0 28px 50px -30px rgba(0,0,0,.75);
+  --p-surface: #172A31;       /* сплошная карточка (там, где нужен цвет, а не градиент) */
+  --p-sub: rgba(255,255,255,.045); --p-sub-rim: rgba(255,255,255,.06); --p-sub-hover: rgba(255,255,255,.085);
+  --p-field: rgba(255,255,255,.075); --p-field-rim: rgba(255,255,255,.10); --p-field-hover: rgba(255,255,255,.12);
+  --p-chrome: rgba(9,17,21,.46); --p-chrome-rim: rgba(255,255,255,.14); --p-chrome-blur: blur(18px) saturate(140%);
+  --p-solid: linear-gradient(180deg, #1D3037 0%, #172830 100%); --p-solid-rim: rgba(255,255,255,.08);
+  --p-solid-shadow: drop-shadow(0 16px 22px rgba(0,0,0,.35));
+
+  --p-ink: #F2F7F8; --p-ink-2: #C9D7DB; --p-muted: #A6BAC0; --p-faint: #6F868D;
+  --p-line: rgba(255,255,255,.08); --p-line-strong: rgba(255,255,255,.20);
+  --p-link: var(--p-accent-ink); --p-link-hover: var(--p-ink);
+
+  --p-accent: #C6F02A; --p-accent-hover: #D4F55A; --p-on-accent: #0B0F05;
+  --p-accent-ink: #D9F77A; --p-accent-ink-dark: #D9F77A;
+  --p-accent-soft: rgba(198,240,42,.13); --p-accent-glow: rgba(198,240,42,.45);
+  --p-accent-graphic: #C6F02A; --p-accent-rgb: 198,240,42; --p-focus: #C6F02A;
+
+  --p-ok: #7CF25A;  --p-ok-soft: rgba(124,242,90,.13);
+  --p-bad: #FF8B7B; --p-bad-soft: rgba(255,139,123,.13);
+  --p-warn: #FFB547; --p-warn-soft: rgba(255,181,71,.14);
+  --p-info: #7CC4FF; --p-info-soft: rgba(124,196,255,.14);
+  --p-violet: #E39BFF; --p-violet-soft: rgba(227,155,255,.15);
+  --p-deep: #C9D7DB; --p-deep-soft: rgba(255,255,255,.075);
+
+  --p-k-paper: #3E9AE3; --p-k-film: #84A208; --p-k-tissue: #CA68C8; --p-k-ribbon: #E96626; --p-k-wide: #01AB9C; --p-k-other: #8FA6AE;
+  --p-k-paper-soft: rgba(62,154,227,.18); --p-k-film-soft: rgba(132,162,8,.20); --p-k-tissue-soft: rgba(202,104,200,.18);
+  --p-k-ribbon-soft: rgba(233,102,38,.18); --p-k-wide-soft: rgba(1,171,156,.18); --p-k-other-soft: rgba(143,166,174,.16);
+  --p-track: rgba(255,255,255,.08);
+  --p-chart-1: #C6F02A; --p-chart-2: #5AB4FF; --p-chart-3: #D58BFF; --p-chart-4: #FF7A4A;
+  --p-chart-5: #2FD4BF; --p-chart-6: #FFC24A; --p-chart-7: #FF7FAE; --p-chart-8: #9FB6C1;
+
+  --p-nav-bg: linear-gradient(180deg, rgba(16,29,34,.64), rgba(9,17,21,.74));
+  --p-nav-rim: rgba(255,255,255,.12); --p-nav-ink: #E9F2F4; --p-nav-muted: #8EA4AB; --p-nav-hover: rgba(255,255,255,.07);
+  --p-nav-active-bg: rgba(198,240,42,.12); --p-nav-active-rim: rgba(198,240,42,.34); --p-nav-active-ink: #F3FCD2;
+  --p-nav-shadow: 0 30px 80px -20px rgba(0,0,0,.85), 30px 0 70px -40px rgba(0,0,0,.7);
+  --p-handle-bg: rgba(255,255,255,.13);
+
+  --p-seg-bg: rgba(9,17,21,.46); --p-seg-rim: rgba(255,255,255,.14); --p-seg-ink: #BACBD0;
+  --p-seg-on: #F2F7F8; --p-seg-on-ink: #0F1A1E; --p-seg-on-sub: rgba(15,26,30,.10); --p-seg-on-hover: #FFFFFF;
+  --p-btn2-bg: rgba(255,255,255,.08); --p-btn2-rim: rgba(255,255,255,.15); --p-btn2-hover: rgba(255,255,255,.14); --p-btn2-shadow: none;
+  --p-btn-primary-shadow: 0 10px 26px -10px var(--p-accent-glow), inset 0 1px 0 rgba(255,255,255,.55);
+  --p-btn-primary-shadow-hover: 0 14px 30px -8px var(--p-accent-glow), inset 0 1px 0 rgba(255,255,255,.55);
+  --p-ava-ring: #15262D;
+  --p-ava-1: linear-gradient(140deg, #D2602C, #92270A); --p-ava-2: linear-gradient(140deg, #3F7FD6, #1B4699);
+  --p-ava-3: linear-gradient(140deg, #9B6BE8, #5528A8); --p-ava-4: linear-gradient(140deg, #22A596, #0B5F57);
+  --p-ava-5: linear-gradient(140deg, #C55BCF, #7A1F96); --p-ava-6: linear-gradient(140deg, #6A9A12, #2E5205);
+  --p-seg-on-shadow: 0 6px 16px -8px rgba(0,0,0,.45); --p-knob-shadow: 0 1px 3px rgba(0,0,0,.35);
+  --p-toggle-on-glow: 0 0 12px -2px var(--p-accent-glow); --p-check-on-glow: 0 0 10px -2px var(--p-accent-glow);
+  --p-toggle-off: rgba(255,255,255,.10); --p-toggle-off-rim: rgba(255,255,255,.20);
+  --p-check-rim: #6F868D; --p-check-on: var(--p-accent); --p-check-on-ink: var(--p-on-accent);
+
+  --p-plate: #22383F; --p-plate-deep: #1A2E35; --p-on-plate: #F2F7F8; --p-on-plate-muted: rgba(242,247,248,.66);
+  --p-plate-bg: linear-gradient(160deg, rgba(34,60,68,.80) 0%, rgba(14,28,34,.86) 100%);
+  --p-plate-rim-a: rgba(255,255,255,.26); --p-plate-rim-b: rgba(255,255,255,.05);
+  --p-plate-shadow: 0 28px 50px -30px rgba(0,0,0,.8);
+
+  --p-overlay: rgba(2,7,9,.56); --p-overlay-blur: blur(10px) saturate(130%);
+  --p-modal-bg: linear-gradient(180deg, rgba(28,46,53,.94), rgba(14,26,31,.96)); --p-modal-blur: blur(28px) saturate(160%);
+  --p-modal-rim: rgba(255,255,255,.14); --p-modal-foot: rgba(255,255,255,.035);
+  --p-pop-bg: rgba(20,36,42,.94); --p-pop-blur: blur(22px) saturate(150%); --p-pop-rim: rgba(255,255,255,.12);
+  --p-tip-bg: #F2F7F8; --p-tip-ink: #0F1A1E; --p-tip-muted: #4F656D;
+  --p-sh-card: 0 18px 40px -28px rgba(0,0,0,.80);
+  --p-sh-pop: 0 26px 60px -20px rgba(0,0,0,.78);
+  --p-sh-modal: 0 50px 120px -30px rgba(0,0,0,.90);
+  --p-spot: rgba(255,255,255,.075); --p-spot-rim: rgba(198,240,42,.55);
+  --p-skel: rgba(255,255,255,.06); --p-skel-hi: rgba(255,255,255,.12);
+}
+
+/* ================= «Классика» — как было до 13.10.2026 ================= */
+[data-theme="classic"] {
+  color-scheme: light;
+  --p-scene: #DDEEEC;
+  --p-page: #D5E3E1;
+  --p-canvas: #E5ECEB;
+  --p-blob-1: transparent; --p-blob-2: transparent; --p-blob-3: transparent;
+
+  --p-panel: #FFFFFF; --p-panel-blur: none;
+  --p-panel-rim-a: transparent; --p-panel-rim-b: transparent;
+  --p-panel-shadow: 0 1px 2px rgba(46,70,68,.07);
+  --p-surface: #FFFFFF;
+  --p-sub: #F3F6F5; --p-sub-rim: transparent; --p-sub-hover: #EEF3F2;
+  --p-field: #E9EFEE; --p-field-rim: transparent; --p-field-hover: #DFE8E6;
+  --p-chrome: #FFFFFF; --p-chrome-rim: transparent; --p-chrome-blur: none;
+  --p-solid: #FFFFFF; --p-solid-rim: transparent;
+  --p-solid-shadow: drop-shadow(0 1px 2px rgba(46,70,68,.07));
+
+  --p-ink: #2E4644; --p-ink-2: #536966; --p-muted: #879895; --p-faint: #BFCDCA;
+  --p-line: #DCE5E3; --p-line-strong: #BFCDCA;
+  --p-link: #3E5754; --p-link-hover: #2E4644;
+
+  --p-accent: #D4A33B; --p-accent-hover: #C2912C; --p-on-accent: #FFFFFF;
+  --p-accent-ink: #A87A1B; --p-accent-ink-dark: #F2D58F;
+  --p-accent-soft: #F7EDD5; --p-accent-glow: rgba(212,163,59,.30);
+  --p-accent-graphic: #D4A33B; --p-accent-rgb: 212,163,59; --p-focus: #D4A33B;
+
+  --p-ok: #3D9A72;  --p-ok-soft: #E1F1E9;
+  --p-bad: #D05846; --p-bad-soft: #F8E3DF;
+  --p-warn: #E0873A; --p-warn-soft: #FBEADB;
+  --p-info: #4C83A6; --p-info-soft: #E1ECF3;
+  --p-violet: #8768AE; --p-violet-soft: #EEE8F5;
+  --p-deep: #2D6A55; --p-deep-soft: #DDEBE5;
+
+  --p-k-paper: #D4A33B; --p-k-film: #4F948F; --p-k-tissue: #B9667E; --p-k-ribbon: #2D6A55; --p-k-wide: #4C83A6; --p-k-other: #E0873A;
+  --p-k-paper-soft: #F7EDD5; --p-k-film-soft: #DDEEEC; --p-k-tissue-soft: #F5E4EA;
+  --p-k-ribbon-soft: #E1F1E9; --p-k-wide-soft: #E1ECF3; --p-k-other-soft: #FBEADB;
+  --p-track: #E9EFEE;
+  --p-chart-1: #3D9A72; --p-chart-2: #4C83A6; --p-chart-3: #8768AE; --p-chart-4: #E0873A;
+  --p-chart-5: #4F948F; --p-chart-6: #D4A33B; --p-chart-7: #B9667E; --p-chart-8: #879895;
+
+  --p-nav-bg: #3E5754;
+  --p-nav-rim: transparent; --p-nav-ink: #EEF3F2; --p-nav-muted: rgba(238,243,242,.62); --p-nav-hover: rgba(255,255,255,.06);
+  --p-nav-active-bg: #E5ECEB; --p-nav-active-rim: transparent; --p-nav-active-ink: #2E4644;
+  --p-nav-shadow: none;
+  --p-handle-bg: #3E5754;
+
+  --p-seg-bg: #E9EFEE; --p-seg-rim: transparent; --p-seg-ink: #536966;
+  --p-seg-on: #3E5754; --p-seg-on-ink: #FFFFFF; --p-seg-on-sub: rgba(255,255,255,.18); --p-seg-on-hover: #344B48;
+  --p-btn2-bg: #FFFFFF; --p-btn2-rim: transparent; --p-btn2-hover: #F6F9F8; --p-btn2-shadow: 0 1px 2px rgba(46,70,68,.07);
+  --p-btn-primary-shadow: 0 6px 16px rgba(212,163,59,.30);
+  --p-btn-primary-shadow-hover: 0 6px 16px rgba(212,163,59,.30);
+  --p-ava-ring: #FFFFFF;
+  --p-ava-1: #C98F6B; --p-ava-2: #6E8FB0; --p-ava-3: #8D7AB5; --p-ava-4: #5E9C86; --p-ava-5: #B07A8C; --p-ava-6: #7F9A5E;
+  --p-seg-on-shadow: none; --p-knob-shadow: 0 1px 2px rgba(46,70,68,.07);
+  --p-toggle-on-glow: none; --p-check-on-glow: none;
+  --p-toggle-off: #CBD7D5; --p-toggle-off-rim: transparent;
+  --p-check-rim: #BFCDCA; --p-check-on: #3E5754; --p-check-on-ink: #FFFFFF;
+
+  --p-plate: #3E5754; --p-plate-deep: #344B48; --p-on-plate: #EEF3F2; --p-on-plate-muted: rgba(238,243,242,.62);
+  --p-plate-bg: #3E5754;
+  --p-plate-rim-a: transparent; --p-plate-rim-b: transparent;
+  --p-plate-shadow: 0 12px 32px rgba(46,70,68,.12);
+
+  --p-overlay: rgba(30,48,46,.42); --p-overlay-blur: none;
+  --p-modal-bg: #FFFFFF; --p-modal-blur: none; --p-modal-rim: transparent; --p-modal-foot: #FAFCFB;
+  --p-pop-bg: #FFFFFF; --p-pop-blur: none; --p-pop-rim: #DCE5E3;
+  --p-tip-bg: #2E4644; --p-tip-ink: #FFFFFF; --p-tip-muted: rgba(255,255,255,.72);
+  --p-sh-card: 0 1px 2px rgba(46,70,68,.07);
+  --p-sh-pop: 0 12px 32px rgba(46,70,68,.12);
+  --p-sh-modal: 0 32px 90px rgba(22,40,38,.35);
+  --p-spot: rgba(212,163,59,.10); --p-spot-rim: rgba(212,163,59,.55);
+  --p-skel: #EEF3F2; --p-skel-hi: #F6F9F8;
+}
+
+/* ================= «Бумага» — счета, выписки, отчёты, PDF (html2canvas) ================= */
+[data-theme="paper"] {
+  color-scheme: light;
+  --p-scene: #FFFFFF; --p-page: #FFFFFF; --p-canvas: #FFFFFF;
+  --p-blob-1: transparent; --p-blob-2: transparent; --p-blob-3: transparent;
+  --p-panel: #FFFFFF; --p-panel-blur: none; --p-panel-rim-a: transparent; --p-panel-rim-b: transparent; --p-panel-shadow: none;
+  --p-surface: #FFFFFF;
+  --p-sub: #F5F6F6; --p-sub-rim: transparent; --p-sub-hover: #F5F6F6;
+  --p-field: #F1F2F2; --p-field-rim: transparent; --p-field-hover: #F1F2F2;
+  --p-chrome: #FFFFFF; --p-chrome-rim: #D9DCDC; --p-chrome-blur: none;
+  --p-solid: #FFFFFF; --p-solid-rim: #D9DCDC; --p-solid-shadow: none;
+  --p-ink: #111111; --p-ink-2: #3A3A3A; --p-muted: #5E5E5E; --p-faint: #9A9A9A;
+  --p-line: #DADADA; --p-line-strong: #B5B5B5;
+  --p-link: #111111; --p-link-hover: #111111;
+  --p-accent: #1A1A1A; --p-accent-hover: #1A1A1A; --p-on-accent: #FFFFFF;
+  --p-accent-ink: #1A1A1A; --p-accent-ink-dark: #FFFFFF;
+  --p-accent-soft: #EFEFEF; --p-accent-glow: rgba(0,0,0,0);
+  --p-accent-graphic: #1A1A1A; --p-accent-rgb: 26,26,26; --p-focus: #1A1A1A;
+  --p-ok: #1E6B3A;  --p-ok-soft: #EAF3ED;
+  --p-bad: #A8321F; --p-bad-soft: #F8E9E6;
+  --p-warn: #8A4D07; --p-warn-soft: #F8EFE3;
+  --p-info: #1C5F9E; --p-info-soft: #E8F0F8;
+  --p-violet: #7A3596; --p-violet-soft: #F3EAF7;
+  --p-deep: #3A3A3A; --p-deep-soft: #F1F2F2;
+  --p-k-paper: #2F86D6; --p-k-film: #6E9B00; --p-k-tissue: #B23FC4; --p-k-ribbon: #F2531F; --p-k-wide: #0E9A8A; --p-k-other: #6F8790;
+  --p-k-paper-soft: #EAF3FB; --p-k-film-soft: #F0F5E5; --p-k-tissue-soft: #F7ECF9;
+  --p-k-ribbon-soft: #FDEEE8; --p-k-wide-soft: #E7F5F3; --p-k-other-soft: #F0F3F4;
+  --p-track: #ECECEC;
+  --p-chart-1: #6E9B00; --p-chart-2: #2F86D6; --p-chart-3: #9B45C4; --p-chart-4: #E0531F;
+  --p-chart-5: #0E9A8A; --p-chart-6: #B07800; --p-chart-7: #D6457A; --p-chart-8: #5F7D8C;
+  --p-nav-bg: #FFFFFF; --p-nav-rim: #D9DCDC; --p-nav-ink: #111111; --p-nav-muted: #5E5E5E; --p-nav-hover: #F5F6F6;
+  --p-nav-active-bg: #EFEFEF; --p-nav-active-rim: transparent; --p-nav-active-ink: #111111; --p-nav-shadow: none; --p-handle-bg: #DADADA;
+  --p-seg-bg: #FFFFFF; --p-seg-rim: #D9DCDC; --p-seg-ink: #3A3A3A;
+  --p-seg-on: #1A1A1A; --p-seg-on-ink: #FFFFFF; --p-seg-on-sub: rgba(255,255,255,.18); --p-seg-on-hover: #1A1A1A;
+  --p-btn2-bg: #FFFFFF; --p-btn2-rim: #D9DCDC; --p-btn2-hover: #F5F6F6; --p-btn2-shadow: none;
+  --p-btn-primary-shadow: none; --p-btn-primary-shadow-hover: none;
+  --p-ava-ring: #FFFFFF;
+  --p-ava-1: #C98F6B; --p-ava-2: #6E8FB0; --p-ava-3: #8D7AB5; --p-ava-4: #5E9C86; --p-ava-5: #B07A8C; --p-ava-6: #7F9A5E;
+  --p-seg-on-shadow: none; --p-knob-shadow: 0 1px 2px rgba(46,70,68,.07);
+  --p-toggle-on-glow: none; --p-check-on-glow: none;
+  --p-toggle-off: #E2E2E2; --p-toggle-off-rim: #B5B5B5;
+  --p-check-rim: #8A8A8A; --p-check-on: #1A1A1A; --p-check-on-ink: #FFFFFF;
+  --p-plate: #1A1A1A; --p-plate-deep: #111111; --p-on-plate: #FFFFFF; --p-on-plate-muted: rgba(255,255,255,.7);
+  --p-plate-bg: #FFFFFF; --p-plate-rim-a: #B5B5B5; --p-plate-rim-b: #B5B5B5; --p-plate-shadow: none;
+  --p-overlay: rgba(0,0,0,.30); --p-overlay-blur: none;
+  --p-modal-bg: #FFFFFF; --p-modal-blur: none; --p-modal-rim: #D9DCDC; --p-modal-foot: #FFFFFF;
+  --p-pop-bg: #FFFFFF; --p-pop-blur: none; --p-pop-rim: #D9DCDC;
+  --p-tip-bg: #1A1A1A; --p-tip-ink: #FFFFFF; --p-tip-muted: rgba(255,255,255,.7);
+  --p-sh-card: none; --p-sh-pop: none; --p-sh-modal: none;
+  --p-spot: rgba(0,0,0,0); --p-spot-rim: rgba(0,0,0,0);
+  --p-skel: #F1F2F2; --p-skel-hi: #F8F8F8;
+}
+
+/* ================= Алиасы старых имён и производные — пересчитываются в каждой теме и в каждой обёртке ================= */
+:root, [data-theme] {
+  --p-gold: var(--p-accent); --p-gold-hover: var(--p-accent-hover);
+  --p-gold-soft: var(--p-accent-soft); --p-gold-text: var(--p-accent-ink);
+  --p-sb: var(--p-plate); --p-sb-deep: var(--p-plate-deep);
+  --p-sb-text: var(--p-on-plate); --p-sb-muted: var(--p-on-plate-muted);
+  --p-glass: var(--p-panel); --p-glass-blur: var(--p-panel-blur); --p-glass-rim: var(--p-panel-rim-a);
+  --p-chart-track: var(--p-track); --p-chart-grid: var(--p-line); --p-chart-axis: var(--p-muted);
+}
+/* Вложенная тема (превью в Настройках, бумажная зона) — заново берёт свой цвет текста */
+[data-theme]:not(html) { color: var(--p-ink); }
+
+/* Тёмная акцентная плашка внутри светлых тем: локально «тёмные» значения (как .p2-card--plan в макете B) */
+:root:not([data-theme="aurora"]):not([data-theme="classic"]):not([data-theme="paper"]) .p-plate,
+[data-theme="light"] .p-plate {
+  color-scheme: dark;
+  --p-panel: var(--p-plate-bg); --p-panel-blur: none;
+  --p-panel-rim-a: var(--p-plate-rim-a); --p-panel-rim-b: var(--p-plate-rim-b); --p-panel-shadow: var(--p-plate-shadow);
+  --p-surface: #183139;
+  --p-ink: #F2F7F8; --p-ink-2: #C6D4D8; --p-muted: #9AB0B6; --p-faint: #6F868D;
+  --p-sub: rgba(255,255,255,.06); --p-sub-rim: rgba(255,255,255,.07); --p-sub-hover: rgba(255,255,255,.10);
+  --p-field: rgba(255,255,255,.08); --p-field-rim: rgba(255,255,255,.10); --p-field-hover: rgba(255,255,255,.12);
+  --p-line: rgba(255,255,255,.08); --p-line-strong: rgba(255,255,255,.20); --p-track: rgba(255,255,255,.10);
+  --p-ok: #7CF25A; --p-ok-soft: rgba(124,242,90,.13); --p-bad: #FF8B7B; --p-bad-soft: rgba(255,139,123,.13);
+  --p-warn: #FFB547; --p-warn-soft: rgba(255,181,71,.14); --p-info: #7CC4FF; --p-info-soft: rgba(124,196,255,.14);
+  --p-violet: #E39BFF; --p-violet-soft: rgba(227,155,255,.15);
+  --p-accent-ink: var(--p-accent-ink-dark); --p-accent-soft: rgba(var(--p-accent-rgb), .13); --p-accent-graphic: var(--p-accent);
+  --p-seg-bg: rgba(255,255,255,.07); --p-seg-rim: rgba(255,255,255,.12); --p-seg-ink: #C6D4D8;
+  --p-seg-on: #F2F7F8; --p-seg-on-ink: #0F1A1E; --p-seg-on-hover: #FFFFFF;
+  --p-btn2-bg: rgba(255,255,255,.08); --p-btn2-rim: rgba(255,255,255,.15); --p-btn2-hover: rgba(255,255,255,.14); --p-btn2-shadow: none;
+  --p-ava-ring: #15262D; --p-tip-bg: #F2F7F8; --p-tip-ink: #0F1A1E; --p-tip-muted: #4F656D;
+  --p-chart-1: #C6F02A; --p-chart-2: #5AB4FF; --p-chart-3: #D58BFF; --p-chart-4: #FF7A4A;
+  --p-chart-5: #2FD4BF; --p-chart-6: #FFC24A; --p-chart-7: #FF7FAE; --p-chart-8: #9FB6C1;
+  --p-toggle-off: rgba(255,255,255,.12); --p-toggle-off-rim: rgba(255,255,255,.18); --p-check-rim: #9AB0B6;
+}
+[data-theme="aurora"] .p-plate {
+  --p-panel: var(--p-plate-bg); --p-panel-rim-a: var(--p-plate-rim-a); --p-panel-rim-b: var(--p-plate-rim-b);
+  --p-panel-shadow: var(--p-plate-shadow);
+}
+[data-theme="classic"] .p-plate {
+  --p-panel: var(--p-plate-bg); --p-panel-rim-a: transparent; --p-panel-rim-b: transparent; --p-panel-shadow: var(--p-plate-shadow);
+  --p-surface: #344B48;
+  --p-ink: #EEF3F2; --p-ink-2: rgba(238,243,242,.82); --p-muted: rgba(238,243,242,.62); --p-faint: rgba(238,243,242,.4);
+  --p-sub: rgba(255,255,255,.07); --p-sub-hover: rgba(255,255,255,.1); --p-field: rgba(255,255,255,.08);
+  --p-line: rgba(255,255,255,.1); --p-line-strong: rgba(255,255,255,.2); --p-track: rgba(255,255,255,.12);
+  --p-ok: #9FD8BC; --p-bad: #F3B5A9; --p-warn: #F3C9A6; --p-accent-ink: #F2DDA8;
+  --p-seg-bg: rgba(255,255,255,.08); --p-seg-ink: rgba(238,243,242,.62); --p-seg-on: #D4A33B; --p-seg-on-ink: #FFFFFF;
+  --p-btn2-bg: rgba(255,255,255,.1); --p-btn2-hover: rgba(255,255,255,.16); --p-btn2-shadow: none; --p-ava-ring: #3E5754;
+  --p-tip-bg: #FFFFFF; --p-tip-ink: #2E4644;
+}
+
+/* ================= Система просит меньше прозрачности — стекло становится сплошным ================= */
+@media (prefers-reduced-transparency: reduce) {
+  :root, [data-theme="light"] { --p-nav-bg: #10232A; --p-overlay-blur: none; --p-overlay: rgba(14,30,36,.5); }
+  [data-theme="aurora"] {
+    --p-panel: #16272D; --p-panel-blur: none; --p-chrome: #16272D; --p-chrome-blur: none;
+    --p-nav-bg: #0E1A1F; --p-modal-bg: #172A31; --p-modal-blur: none; --p-pop-bg: #172A31; --p-pop-blur: none;
+    --p-overlay-blur: none; --p-overlay: rgba(2,7,9,.72);
+  }
+  [data-theme="classic"] { --p-nav-bg: #3E5754; --p-overlay: rgba(30,48,46,.42); }
+}
+
+/* ================= Печать: любая тема печатается «бумагой» ================= */
+@media print {
+  :root, [data-theme] {
+    color-scheme: light !important;
+    --p-scene: #FFFFFF !important; --p-page: #FFFFFF !important; --p-canvas: #FFFFFF !important;
+    --p-panel: #FFFFFF !important; --p-panel-blur: none !important; --p-panel-shadow: none !important;
+    --p-surface: #FFFFFF !important; --p-solid: #FFFFFF !important; --p-chrome: #FFFFFF !important;
+    --p-sub: #F5F6F6 !important; --p-field: #F1F2F2 !important; --p-track: #ECECEC !important;
+    --p-ink: #111111 !important; --p-ink-2: #3A3A3A !important; --p-muted: #5E5E5E !important; --p-faint: #9A9A9A !important;
+    --p-line: #DADADA !important; --p-line-strong: #B5B5B5 !important;
+    --p-accent: #1A1A1A !important; --p-accent-hover: #1A1A1A !important; --p-on-accent: #FFFFFF !important;
+    --p-accent-ink: #1A1A1A !important; --p-accent-soft: #EFEFEF !important; --p-accent-glow: rgba(0,0,0,0) !important;
+    --p-accent-graphic: #1A1A1A !important;
+    --p-ok: #1E6B3A !important; --p-bad: #A8321F !important; --p-warn: #8A4D07 !important; --p-info: #1C5F9E !important; --p-violet: #7A3596 !important;
+    --p-ok-soft: #EAF3ED !important; --p-bad-soft: #F8E9E6 !important; --p-warn-soft: #F8EFE3 !important; --p-info-soft: #E8F0F8 !important; --p-violet-soft: #F3EAF7 !important;
+    --p-plate: #1A1A1A !important; --p-plate-bg: #FFFFFF !important; --p-on-plate: #111111 !important;
+    --p-sh-card: none !important; --p-sh-pop: none !important; --p-sh-modal: none !important;
+    --p-blob-1: transparent !important; --p-blob-2: transparent !important; --p-blob-3: transparent !important;
+    --p-seg-bg: #FFFFFF !important; --p-seg-rim: #D9DCDC !important; --p-seg-ink: #3A3A3A !important;
+    --p-seg-on: #1A1A1A !important; --p-seg-on-ink: #FFFFFF !important;
+    --p-btn2-bg: #FFFFFF !important; --p-btn2-rim: #D9DCDC !important;
+    --p-chrome-rim: #D9DCDC !important; --p-field-rim: transparent !important; --p-sub-rim: transparent !important;
+    --p-panel-rim-a: #DADADA !important; --p-panel-rim-b: #DADADA !important;
+  }
+  .p-plate {
+    color-scheme: light !important;
+    --p-ink: #111111 !important; --p-ink-2: #3A3A3A !important; --p-muted: #5E5E5E !important;
+    --p-line: #DADADA !important; --p-track: #ECECEC !important; --p-sub: #F5F6F6 !important; --p-field: #F1F2F2 !important;
+    --p-accent-ink: #1A1A1A !important; --p-ok: #1E6B3A !important; --p-bad: #A8321F !important;
+  }
+}

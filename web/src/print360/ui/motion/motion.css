@@ -1,0 +1,75 @@
+/* Print 360 — движение (src/ui/motion/motion.css). Подключается из src/ui/ui.css.
+   Правила: двигаем только transform, opacity, filter, stroke-dashoffset. Бесконечные украшения помечаем классом .p-loop.
+   Режимы (html[data-motion]): full — всё; calm — без конфетти, лучей, «дыхания» и переливов (.p-loop); off — без анимаций.
+   prefers-reduced-motion в системе = off. */
+
+@property --p-beam-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+
+/* ---------- ключевые кадры ---------- */
+@keyframes p-reveal { from { opacity: 0; transform: translateY(8px); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes p-rise   { from { opacity: 0; transform: translateY(10px) scale(.985); filter: blur(4px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes p-pop    { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes p-fade   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes p-grow-y { from { transform: scaleY(0); } to { transform: none; } }
+@keyframes p-grow-x { from { transform: scaleX(0); } to { transform: none; } }
+@keyframes p-grow   { from { transform: scaleY(0); } to { transform: none; } }   /* то же, что p-grow-y (имя из контракта) */
+@keyframes p-draw   { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes p-breathe { 0%, 100% { opacity: .72; } 50% { opacity: 1; } }
+@keyframes p-pulse-ring { 0%, 100% { opacity: .38; } 50% { opacity: 1; } }
+@keyframes p-beam   { to { --p-beam-a: 360deg; } }
+@keyframes p-shimmer { from { background-position: 160% 0; } to { background-position: -60% 0; } }
+@keyframes p-sheen  { 0% { transform: translate(0, 0) rotate(0deg); opacity: .65; } 50% { opacity: 1; } 100% { transform: translate(125%, 22%) rotate(10deg); opacity: .6; } }
+@keyframes p-rim    { from { opacity: .82; } to { opacity: 1; } }
+@keyframes p-drift1 { to { transform: translate(140px, -70px) scale(1.12); } }
+@keyframes p-drift2 { to { transform: translate(-120px, 60px) scale(1.08); } }
+@keyframes p-drift3 { to { transform: translate(-90px, 70px) scale(1.15); } }
+@keyframes p-shine-text { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+
+/* ---------- готовые классы ---------- */
+/* Появление блока: размытие 6px → 0, сдвиг 8px → 0, 320 мс, шаг 40 мс (--i = номер блока, максимум 8) */
+.p-reveal {
+  animation: p-reveal 320ms var(--p-out) backwards;
+  animation-delay: calc(min(var(--i, 0), 8) * 40ms + var(--p-reveal-delay, 0ms));
+}
+.p-reveal-wait { opacity: 0; }
+/* Плитки и крупные карточки: снизу на 10 px с размытием 4 px, 700 мс, шаг 70 мс */
+.p-rise {
+  animation: p-rise 700ms var(--p-spring) backwards;
+  animation-delay: calc(min(var(--i, 0), 8) * 70ms + var(--p-reveal-delay, 0ms));
+}
+.p-pop-in { animation: p-pop 260ms var(--p-spring) backwards; }
+.p-fade-in { animation: p-fade 240ms ease-out backwards; }
+/* Столбики: scaleY 0 → 1, 600 мс, шаг 30 мс */
+.p-grow-y { transform-origin: 50% 100%; transform-box: fill-box; animation: p-grow-y 600ms cubic-bezier(.2,.9,.2,1) backwards; animation-delay: calc(var(--i, 0) * 30ms + var(--p-reveal-delay, 0ms)); }
+.p-grow-x { transform-origin: 0 50%; transform-box: fill-box; animation: p-grow-x 700ms var(--p-out) backwards; animation-delay: calc(var(--i, 0) * 60ms + var(--p-reveal-delay, 0ms)); }
+/* Линии и дуги рисуются: у элемента pathLength="1" */
+.p-draw { stroke-dasharray: 1 1; animation: p-draw 900ms var(--p-out) backwards; animation-delay: calc(var(--i, 0) * 120ms + var(--p-reveal-delay, 0ms)); }
+.p-breathe { animation: p-breathe 2.4s ease-in-out infinite; }
+/* Скелетон загрузки */
+.p-shimmer {
+  background: linear-gradient(90deg, var(--p-skel) 0%, var(--p-skel) 38%, var(--p-skel-hi) 50%, var(--p-skel) 62%, var(--p-skel) 100%);
+  background-size: 220% 100%; animation: p-shimmer 1.5s linear infinite;
+}
+
+/* ---------- смена темы: новый вид «проявляется» кругом (useTheme.js → applyTheme(…, { animate: true })) ---------- */
+html.p-vt-theme::view-transition-old(root),
+html.p-vt-theme::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html.p-vt-theme::view-transition-new(root) { z-index: 2; }
+
+/* ---------- режимы ---------- */
+html[data-motion="calm"] .p-loop,
+html[data-motion="calm"] .p-loop::before,
+html[data-motion="calm"] .p-loop::after { animation: none !important; }
+
+html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="off"] *::after {
+  animation-duration: 1ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important; transition-delay: 0s !important; scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important; transition-delay: 0s !important; scroll-behavior: auto !important;
+  }
+}
+/* Скрытая вкладка браузера — бесконечные украшения на паузе (класс ставит motion/index.js) */
+html.p-hidden .p-loop, html.p-hidden .p-loop::before, html.p-hidden .p-loop::after { animation-play-state: paused !important; }

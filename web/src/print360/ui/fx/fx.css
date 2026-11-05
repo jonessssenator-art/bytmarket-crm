@@ -1,0 +1,194 @@
+/* Print 360 — эффекты (src/ui/fx): цифры, плитки-свечения, панели-стекло, подсветка за курсором, лента, «мигающая рамка».
+   Цвета — только токены темы; свечения (--p-glow-*) одинаковы во всех темах. Бесконечные украшения — с классом .p-loop. */
+
+/* ---------- Num ---------- */
+.p-num { display: inline-flex; align-items: baseline; gap: 0; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: inherit; }
+.p-num__flow { font-variant-numeric: tabular-nums; --number-flow-char-height: 1em; }
+.p-num__unit { margin-left: .24em; font-size: max(.53em, min(1em, 13px)); font-weight: 700; letter-spacing: 0; opacity: .9; }
+
+/* ---------- GlowTile: светящаяся плитка-«сквиркл» (макет v2, .p2-tile) ----------
+   13.10.2026, правка Раби «слишком яркие — успокоить чуть»: заливки приглушены (токены --p-glow-*), кант — тонкая
+   светлая линия и мягкое свечение у края (--p-rimsoft-*), без внешнего ореола и без «перелива»; «горит» — тонкий
+   тёплый кант вместо оранжевого кольца. Цвет по смыслу (лайм, угли, небо, фиолет) остаётся узнаваемым. */
+.p-glow {
+  --g: none; --rim: #FFFFFF; --edge: #FFFFFF; --shine: rgba(0,0,0,.3); --rim-soft: rgba(255,255,255,.2); --edge-soft: rgba(255,255,255,.2);
+  position: relative; isolation: isolate; display: flex; flex-direction: column; min-width: 0;
+  height: 176px; padding: 18px 20px; box-sizing: border-box; border: 0; border-radius: 30px; margin: 0;
+  color: #FFFFFF; background: var(--g); text-align: left; font-family: var(--p-font); font-size: 14px; font-weight: 500; line-height: 1.35;
+  box-shadow: 0 18px 30px -20px var(--shine), 0 2px 6px -2px rgba(18,37,44,.16);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  transition: transform .35s var(--p-spring), box-shadow .3s ease;
+}
+.p-glow--sm { height: 132px; padding: 14px 16px; border-radius: 24px; }
+.p-glow--auto { height: auto; min-height: 176px; }
+[data-theme="aurora"] .p-glow { box-shadow: 0 26px 44px -28px rgba(0,0,0,.9), 0 14px 36px -26px var(--shine); }
+[data-theme="classic"] .p-glow { box-shadow: 0 16px 30px -22px var(--shine), 0 1px 2px rgba(46,70,68,.12); }
+.p-glow--lime   { --g: var(--p-glow-lime);   --rim: var(--p-rim-lime);   --edge: var(--p-edge-lime);   --shine: var(--p-shine-lime);   --rim-soft: var(--p-rimsoft-lime);   --edge-soft: var(--p-edgesoft-lime); }
+.p-glow--ember  { --g: var(--p-glow-ember);  --rim: var(--p-rim-ember);  --edge: var(--p-edge-ember);  --shine: var(--p-shine-ember);  --rim-soft: var(--p-rimsoft-ember);  --edge-soft: var(--p-edgesoft-ember); }
+.p-glow--sky    { --g: var(--p-glow-sky);    --rim: var(--p-rim-sky);    --edge: var(--p-edge-sky);    --shine: var(--p-shine-sky);    --rim-soft: var(--p-rimsoft-sky);    --edge-soft: var(--p-edgesoft-sky); }
+.p-glow--violet { --g: var(--p-glow-violet); --rim: var(--p-rim-violet); --edge: var(--p-edge-violet); --shine: var(--p-shine-violet); --rim-soft: var(--p-rimsoft-violet); --edge-soft: var(--p-edgesoft-violet); }
+.p-glow__fx, .p-glow__rim, .p-glow__halo { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+.p-glow__fx { z-index: 0; overflow: hidden; }
+/* блик стоит на месте и едва заметен — без медленного «перелива» */
+.p-glow__sheen {
+  position: absolute; left: -30%; top: -86%; width: 82%; height: 190%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255,255,255,.07), rgba(255,255,255,0));
+}
+/* кант: тонкая светлая линия края + мягкое свечение цвета смысла внутри, без пульсации */
+.p-glow__rim {
+  z-index: 1;
+  box-shadow: inset 0 0 0 1px var(--edge-soft), inset 0 0 16px 0 var(--rim-soft);
+}
+/* «горит»: тонкий тёплый кант по краю (без ореола вокруг и без «дыхания») */
+.p-glow__halo { z-index: 1; box-shadow: inset 0 0 0 1.5px rgba(255,170,110,.62), inset 0 0 14px 0 rgba(255,120,60,.20); }
+@supports (corner-shape: squircle) {
+  .p-glow { border-radius: 50px; corner-shape: squircle; }
+  .p-glow--sm { border-radius: 40px; }
+  .p-glow__fx, .p-glow__rim, .p-glow__halo { corner-shape: squircle; }
+}
+.p-glow > .p-glow__body { position: relative; z-index: 2; display: flex; gap: 14px; flex: 1; min-height: 0; min-width: 0; }
+.p-glow__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.p-glow__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 32px; min-width: 0; }
+.p-glow__title { font-size: 13.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 8px rgba(0,0,0,.3); }
+.p-glow__ic {
+  display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border-radius: 50%; flex: none;
+  background: rgba(255,255,255,.16); box-shadow: inset 0 0 0 1px rgba(255,255,255,.30);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.p-glow__num {
+  display: flex; align-items: baseline; margin-top: 12px; min-width: 0;
+  font-size: 36px; font-weight: 800; letter-spacing: -.025em; line-height: 1.05; white-space: nowrap;
+  text-shadow: 0 2px 18px rgba(0,0,0,.28);
+}
+.p-glow--sm .p-glow__num { margin-top: 6px; font-size: 28px; }
+.p-glow__num .p-num__unit, .p-glow__unit { margin-left: 7px; font-size: 19px; font-weight: 700; letter-spacing: 0; opacity: .9; }
+.p-glow--sm .p-glow__num .p-num__unit, .p-glow--sm .p-glow__unit { font-size: 15px; }
+.p-glow__cap { margin-top: 4px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.82); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-glow__foot { margin-top: auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; min-width: 0; }
+/* чипы — в одну строку и целиком: что не влезло, GlowChips уводит в «ещё N»; ряд занимает всё свободное место низа */
+.p-glow__chips { position: relative; flex: 1 1 auto; display: flex; gap: 6px; min-width: 0; overflow: hidden; }
+.p-glow__chips-measure {
+  position: absolute; left: 0; top: 0; width: max-content; height: 0; display: flex; gap: 6px;
+  overflow: hidden; visibility: hidden; pointer-events: none; white-space: nowrap;
+}
+.p-glow__chip {
+  display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 11px; border-radius: var(--p-r-full);
+  font-size: 12px; font-weight: 700; color: #FFFFFF; white-space: nowrap; flex-shrink: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  background: rgba(255,255,255,.14); box-shadow: inset 0 0 0 1px rgba(255,255,255,.22);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+/* последнее средство: не влезает даже первый чип (с «ещё N») — сжимается только он; когда всё влезает, сжатия нет */
+.p-glow__chips > .p-glow__chip:first-child { flex-shrink: 1; }
+.p-glow__chip--more { color: rgba(255,255,255,.86); }
+.p-glow__chip > svg { flex-shrink: 0; }
+.p-glow__chip-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p-glow--sky .p-glow__chip, .p-glow--ember .p-glow__chip { background: rgba(14,10,28,.26); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); }
+.p-glow .p-glow__chip--up { color: var(--p-up); background: rgba(6,14,4,.45); box-shadow: inset 0 0 0 1px rgba(124,242,90,.30); }
+.p-glow .p-glow__chip--down { color: var(--p-down); background: rgba(24,4,2,.45); box-shadow: inset 0 0 0 1px rgba(255,163,148,.32); }
+.p-glow__extra { flex: none; display: flex; align-items: flex-end; }
+.p-glow__aside { flex: none; display: flex; align-items: stretch; }
+.p-glow.is-click { cursor: pointer; }
+.p-glow.is-click:hover { transform: translateY(-3px); }
+.p-glow.is-click:active { transform: translateY(-1px) scale(.99); }
+.p-glow:focus-visible { outline: 2px solid var(--p-focus); outline-offset: 3px; }
+.p-glow__skel { display: block; height: 30px; width: 62%; margin-top: 14px; border-radius: 10px; background: rgba(255,255,255,.14); }
+.p-glow__skel--sm { height: 22px; width: 40%; margin-top: auto; }
+
+/* мини-столбики в плитке («по дням») — GlowSpark; «сегодня» — белый столбик с лёгким, а не ярким свечением */
+.p-glow-spark { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.p-glow-spark__cap { font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,.8); white-space: nowrap; }
+.p-glow-spark__bars { display: flex; align-items: flex-end; gap: 4px; height: 40px; }
+.p-glow-spark__bars > i {
+  width: 6px; min-height: 3px; border-radius: 3px 3px 2px 2px; background: rgba(255,255,255,.42);
+  transform-origin: bottom; animation: p-grow-y .7s var(--p-out) backwards; animation-delay: calc(.4s + var(--i, 0) * 45ms);
+}
+.p-glow-spark__bars > i.is-now { background: #FFFFFF; box-shadow: 0 0 6px rgba(255,255,255,.30); }
+
+/* мини-колонки этапов справа во всю высоту — GlowStages */
+.p-glow-stages {
+  display: flex; align-items: flex-end; gap: 2px; padding: 8px 6px 7px; border-radius: 18px;
+  background: rgba(6,24,52,.46); box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.p-glow--lime .p-glow-stages { background: rgba(4,8,2,.5); }
+.p-glow--ember .p-glow-stages { background: rgba(40,6,4,.42); }
+.p-glow--violet .p-glow-stages { background: rgba(24,4,40,.42); }
+.p-glow-stages__col { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 48px; min-width: 0; }
+.p-glow-stages__col > b { font-size: 12.5px; font-weight: 800; line-height: 1; }
+.p-glow-stages__col > i {
+  width: 28px; border-radius: 8px; background: rgba(255,255,255,.30); box-shadow: inset 0 0 0 1px rgba(255,255,255,.38);
+  transform-origin: bottom; animation: p-grow-y .8s var(--p-spring) backwards; animation-delay: calc(.5s + var(--i, 0) * 70ms);
+}
+.p-glow-stages__col > span { max-width: 100%; font-size: 10.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- GlassPanel и DarkPlate (панели макета v2, .p2-card) ---------- */
+.p-glass {
+  position: relative; display: flex; flex-direction: column; min-width: 0; box-sizing: border-box;
+  border-radius: 26px; color: var(--p-ink);
+  background: var(--p-panel); -webkit-backdrop-filter: var(--p-panel-blur); backdrop-filter: var(--p-panel-blur);
+  box-shadow: var(--p-panel-shadow);
+}
+.p-glass::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(165deg, var(--p-panel-rim-a), var(--p-panel-rim-b) 42%, var(--p-panel-rim-b) 78%, var(--p-panel-rim-a));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.p-glass--sub { background: var(--p-sub); box-shadow: inset 0 0 0 1px var(--p-sub-rim); -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 18px; }
+.p-glass--sub::before { display: none; }
+.p-glass--chrome { background: var(--p-chrome); -webkit-backdrop-filter: var(--p-chrome-blur); backdrop-filter: var(--p-chrome-blur); box-shadow: inset 0 0 0 1px var(--p-chrome-rim); }
+.p-glass--chrome::before { display: none; }
+.p-glass.is-click { cursor: pointer; transition: transform .3s var(--p-spring), box-shadow .3s ease; }
+.p-glass.is-click:hover { transform: translateY(-2px); }
+.p-plate.p-glass { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+/* ---------- SpotlightCard: свет идёт за курсором (React Bits Spotlight Card + Magic UI Magic Card) ---------- */
+.p-spot { position: relative; isolation: isolate; --mx: 50%; --my: 50%; }
+.p-spot__light, .p-spot__rim { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .35s ease; }
+.p-spot__light { z-index: -1; background: radial-gradient(var(--spot-size, 280px) circle at var(--mx) var(--my), var(--spot-color, var(--p-spot)), transparent 72%); }
+.p-spot__rim {
+  z-index: 3; padding: 1px;
+  background: radial-gradient(calc(var(--spot-size, 280px) * .6) circle at var(--mx) var(--my), var(--spot-rim, var(--p-spot-rim)), transparent 72%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.p-spot.is-lit > .p-spot__light, .p-spot.is-lit > .p-spot__rim { opacity: 1; }
+
+/* ---------- AnimatedList ---------- */
+.p-alist { position: relative; display: flex; flex-direction: column; min-width: 0; }
+.p-alist__item { min-width: 0; transform-origin: 50% 0; }
+
+/* ---------- AttentionBeam: «мигающая рамка» и луч по рамке (Magic UI Border Beam / Shine Border) ---------- */
+.p-attn { position: relative; }
+.p-attn--bad    { --attn-c: var(--p-bad);    --attn-soft: var(--p-bad-soft);    --attn-hi: var(--p-edge-ember); }
+.p-attn--warn   { --attn-c: var(--p-warn);   --attn-soft: var(--p-warn-soft);   --attn-hi: #FFD08A; }
+.p-attn--accent { --attn-c: var(--p-accent-graphic); --attn-soft: var(--p-accent-soft); --attn-hi: var(--p-edge-lime); }
+.p-attn--violet { --attn-c: var(--p-violet); --attn-soft: var(--p-violet-soft); --attn-hi: var(--p-edge-violet); }
+.p-attn--sky    { --attn-c: var(--p-info);   --attn-soft: var(--p-info-soft);   --attn-hi: var(--p-edge-sky); }
+.p-attn--ok     { --attn-c: var(--p-ok);     --attn-soft: var(--p-ok-soft);     --attn-hi: var(--p-up); }
+.p-attn__ring, .p-attn__beam { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 4; }
+.p-attn__ring { box-shadow: inset 0 0 0 var(--attn-w, 1.5px) var(--attn-c), 0 0 0 4px var(--attn-soft); animation: p-pulse-ring 1.8s ease-in-out infinite; }
+.p-attn__beam {
+  padding: var(--attn-w, 1.5px);
+  background: conic-gradient(from var(--p-beam-a), transparent 0deg, transparent 230deg, var(--attn-c) 300deg, var(--attn-hi) 338deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: p-beam var(--attn-speed, 3s) linear infinite;
+}
+.p-attn--beam > .p-attn__ring { animation: none; box-shadow: inset 0 0 0 1px var(--attn-soft); }
+/* «Спокойные» и «Без анимаций»: вместо луча — ровная рамка */
+html[data-motion="calm"] .p-attn__beam, html[data-motion="off"] .p-attn__beam { background: var(--attn-c); opacity: .75; }
+@media (prefers-reduced-motion: reduce) { .p-attn__beam { background: var(--attn-c); opacity: .75; } }
+
+/* ---------- ShinyText: блик бежит по тексту (React Bits Shiny Text) ---------- */
+.p-shiny {
+  --shiny-c: var(--p-ink-2); --shiny-hi: var(--p-ink);
+  background: linear-gradient(110deg, var(--shiny-c) 0%, var(--shiny-c) 38%, var(--shiny-hi) 50%, var(--shiny-c) 62%, var(--shiny-c) 100%);
+  background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: p-shine-text var(--shiny-speed, 2.8s) linear infinite;
+}
+html[data-motion="off"] .p-shiny, html[data-motion="calm"] .p-shiny { background-position: 50% 0; }
+
+/* ---------- AuroraBackdrop: фон-аврора из CSS (вместо WebGL React Bits Aurora) ---------- */
+.p-aurora { position: absolute; inset: 0; overflow: hidden; background: var(--p-scene); pointer-events: none; z-index: 0; }
+.p-aurora__blob { position: absolute; border-radius: 50%; filter: blur(70px); }
+.p-aurora__blob--1 { width: 640px; height: 420px; left: 16%; bottom: -170px; background: var(--p-blob-1); animation: p-drift1 28s ease-in-out infinite alternate; }
+.p-aurora__blob--2 { width: 560px; height: 460px; right: 2%; top: 36%; background: var(--p-blob-2); animation: p-drift2 34s ease-in-out infinite alternate; }
+.p-aurora__blob--3 { width: 540px; height: 360px; left: 40%; top: -150px; background: var(--p-blob-3); animation: p-drift3 38s ease-in-out infinite alternate; }

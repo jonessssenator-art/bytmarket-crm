@@ -1,0 +1,410 @@
+/* Print 360 — оболочка v2: шторка меню (AppNav), язычок у края, знак в шапке (NavMark), шапка раздела (.p-head).
+   Только токены var(--p-…) — без hex. Меню тёмное стекло в любой теме (--p-nav-*).
+   Классы: p-navx (корень), p-nav (шторка), p-nav-handle, p-nav-scrim, p-nav-coach, p-navmark, p-head. */
+
+/* ================= корень и общие величины ================= */
+.p-navx {
+  --nav-w: 296px;
+  --nav-gap: 12px;
+  --nav-item-h: 37px;
+  --nav-item-min: 26px;
+  --nav-label-h: 28px;
+  --nav-fs: 13.5px;
+  --nav-ease-in: cubic-bezier(.4, 0, 1, 1);
+  --nav-glide: cubic-bezier(.3, .8, .3, 1);
+  --nav-spring: cubic-bezier(.22, 1.1, .36, 1);
+  font-family: var(--p-font);
+}
+/* пружина k=380, c=30, m=1 (перелёт ≈2%) — где браузер понимает linear() */
+@supports (transition-timing-function: linear(0, 1)) {
+  .p-navx {
+    --nav-spring: linear(0, 0.037, 0.126, 0.243, 0.369, 0.492, 0.606, 0.705, 0.789, 0.856, 0.909, 0.949, 0.978, 0.998, 1.011, 1.018, 1.022, 1.023, 1.022, 1.019, 1.017, 1.014, 1.011, 1.009, 1.006, 1.004, 1.003, 1.002, 1);
+  }
+}
+
+/* ================= ручка у левого края (правка Раби 13.10.2026: крупнее, заметнее, без радуги) =================
+   Тёмное стекло, как у знака меню в шапке, светлый кант, мягкая тень, внутри стрелка «›». Видно 14 × 112 px,
+   ещё 4 px спрятаны за краем — при наведении (и когда курсор подошёл к краю, data-near) ручка выдвигается на них.
+   Нажали — меню вытянуто и остаётся открытым, пока не нажали «Скрыть» (useEdgeReveal: by 'click').
+   Над ручкой наведение меню не открывает. ::after — невидимый запас зоны нажатия (шире и выше ручки). */
+.p-nav-handle {
+  --handle-rim: inset 0 0 0 1px color-mix(in srgb, var(--p-nav-ink) 22%, transparent), inset 0 1px 0 color-mix(in srgb, var(--p-nav-ink) 16%, transparent);
+  position: fixed; left: 0; top: 50%; z-index: var(--p-z-nav, 40);
+  width: 18px; height: 112px; margin: -56px 0 0; padding: 0 0 0 4px; box-sizing: border-box; border: 0;
+  border-radius: 0 14px 14px 0; display: grid; place-items: center; cursor: pointer;
+  color: var(--p-nav-ink);
+  background: linear-gradient(var(--p-nav-hover), var(--p-nav-hover)), var(--p-nav-bg);
+  -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: var(--handle-rim), var(--p-panel-shadow);
+  transform: translateX(-4px);
+  transition: transform .22s var(--p-out, ease-out), opacity .2s ease, box-shadow .2s ease;
+}
+/* тёмная «Аврора»: стекло ручки светлее, кант ярче — чтобы ручку было видно на тёмном фоне */
+[data-theme="aurora"] .p-nav-handle {
+  --handle-rim: inset 0 0 0 1px color-mix(in srgb, var(--p-nav-ink) 30%, transparent), inset 0 1px 0 color-mix(in srgb, var(--p-nav-ink) 24%, transparent);
+  background: linear-gradient(color-mix(in srgb, var(--p-nav-ink) 13%, transparent), color-mix(in srgb, var(--p-nav-ink) 13%, transparent)), var(--p-nav-bg);
+}
+.p-nav-handle::after { content: ""; position: absolute; top: -8px; bottom: -8px; left: 0; right: -8px; }
+.p-nav-handle > svg { transition: transform .22s var(--p-out, ease-out); }
+.p-navx[data-near] .p-nav-handle,
+.p-nav-handle:hover { transform: none; }
+.p-nav-handle:hover > svg { transform: translateX(1px); }
+.p-nav-handle:active { transform: none; }
+.p-nav-handle:focus { outline: none; }
+.p-nav-handle:focus-visible { outline: none; transform: none; box-shadow: var(--handle-rim), 0 0 0 2px var(--p-accent), var(--p-panel-shadow); }
+.p-navx[data-shown] .p-nav-handle,
+.p-navx[data-state="will-open"] .p-nav-handle { opacity: 0; transform: translateX(-18px); pointer-events: none; }
+.p-navx[data-coach]:not([data-near]) .p-nav-handle { animation: p-nav-nudge 1.2s ease-in-out 1.2s 3; }
+
+/* затемнение — только когда открыли касанием (планшет) */
+.p-nav-scrim {
+  position: fixed; inset: 0; z-index: calc(var(--p-z-nav, 40) - 1);
+  background: var(--p-nav-bg); opacity: .38;
+  animation: p-nav-fade .2s ease both;
+}
+
+/* ================= шторка ================= */
+.p-nav {
+  position: fixed; z-index: var(--p-z-nav, 40);
+  left: var(--nav-gap); top: var(--nav-gap); bottom: var(--nav-gap); width: var(--nav-w);
+  display: flex; flex-direction: column; box-sizing: border-box; padding: 18px 12px 12px;
+  border-radius: var(--p-r-xl, 28px); isolation: isolate;
+  background: var(--p-nav-bg); color: var(--p-nav-ink);
+  -webkit-backdrop-filter: blur(30px) saturate(170%); backdrop-filter: blur(30px) saturate(170%);
+  box-shadow: var(--p-nav-shadow);
+  /* закрыто: уехала за край; прозрачность гаснет в последние 100 мс */
+  transform: translateX(calc(-100% - var(--nav-gap) - 24px)); opacity: 0; visibility: hidden;
+  transition: transform .22s var(--nav-ease-in), opacity .1s linear .12s, visibility 0s linear .22s;
+  font-family: var(--p-font); -webkit-font-smoothing: antialiased;
+}
+/* курсор ждёт у края — шторка выглядывает на 14 px */
+.p-navx[data-state="will-open"] .p-nav {
+  transform: translateX(calc(-100% - var(--nav-gap) + 14px)); opacity: 1; visibility: visible;
+  transition: transform .12s var(--p-out, ease-out), opacity .08s ease-out, visibility 0s;
+}
+.p-navx[data-shown] .p-nav {
+  transform: none; opacity: 1; visibility: visible;
+  transition: transform .42s var(--nav-spring), opacity .14s ease-out, visibility 0s;
+}
+/* кант стекла с бликом сверху */
+.p-nav::before {
+  content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(165deg,
+    color-mix(in srgb, var(--p-nav-ink) 30%, transparent),
+    color-mix(in srgb, var(--p-nav-ink) 5%, transparent) 40%,
+    color-mix(in srgb, var(--p-nav-ink) 3%, transparent) 75%,
+    color-mix(in srgb, var(--p-nav-ink) 14%, transparent));
+  -webkit-mask: linear-gradient(var(--p-nav-ink) 0 0) content-box, linear-gradient(var(--p-nav-ink) 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.p-nav > * { position: relative; z-index: 1; }
+
+/* пункты въезжают по очереди — только когда шторка открылась из закрытого состояния */
+.p-navx:not([data-shown]) .p-nav__stag { opacity: 0; }
+.p-navx[data-shown]:not([data-instant]) .p-nav__stag {
+  animation: p-nav-in .26s cubic-bezier(.2, .8, .2, 1) both;
+  animation-delay: calc(60ms + var(--i, 0) * 18ms);
+}
+
+/* ---------- шапка шторки: бренд + кнопка «Скрыть» ---------- */
+.p-nav__head { display: flex; align-items: flex-start; gap: 4px; min-width: 0; }
+.p-nav__head > .p-nav__brand { flex: 1 1 auto; }
+/* «Скрыть» — заметная круглая кнопка «‹» справа от названия; только она (и Esc, Ctrl+\) прячет вытянутое меню */
+.p-nav__hide {
+  flex: none; width: 34px; height: 34px; margin: 1px 0 0; padding: 0 1px 0 0; box-sizing: border-box; border: 0; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer; color: var(--p-nav-ink);
+  background: color-mix(in srgb, var(--p-nav-ink) 11%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--p-nav-ink) 15%, transparent);
+  transition: background .2s ease, transform .14s ease;
+}
+.p-nav__hide > svg { transition: transform .22s var(--p-out, ease-out); }
+.p-nav__hide:hover { background: color-mix(in srgb, var(--p-nav-ink) 18%, transparent); }
+.p-nav__hide:hover > svg { transform: translateX(-1px); }
+.p-nav__hide:active { transform: scale(.94); }
+.p-nav__hide:focus { outline: none; }
+.p-nav__hide:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--p-accent); }
+.p-nav__brand { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 0 8px 16px 10px; }
+.p-nav__brand.is-wordmark { padding: 2px 12px 16px; }
+.p-nav__brand-txt { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.p-nav__brand:not(.is-wordmark) .p-nav__brand-txt { gap: 2px; }
+.p-nav__brand-name { font-size: 14px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-nav__brand-sub { font-size: 11.5px; font-weight: 600; color: var(--p-nav-muted); white-space: nowrap; }
+.p-nav__brand-tile {
+  width: 36px; height: 36px; border-radius: 12px; flex: none; display: grid; place-items: center; overflow: hidden;
+  background: var(--p-accent); color: var(--p-on-accent); font-size: 17px; font-weight: 800;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--p-nav-ink) 55%, transparent);
+}
+.p-nav__brand-tile.is-img { background: var(--p-nav-ink); box-shadow: none; }
+.p-nav__brand-tile > img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+.p-nav__search {
+  display: flex; align-items: center; gap: 10px; width: 100%; height: 38px; margin: 0 0 8px; padding: 0 8px 0 14px; box-sizing: border-box;
+  border: 0; border-radius: 999px; background: color-mix(in srgb, var(--p-nav-ink) 7%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--p-nav-ink) 8%, transparent);
+  color: var(--p-nav-muted); font: 600 12.5px/1 var(--p-font); cursor: pointer; text-align: left; transition: background .2s;
+}
+.p-nav__search:hover { background: color-mix(in srgb, var(--p-nav-ink) 11%, transparent); }
+.p-nav__search > span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-nav kbd, .p-nav-coach kbd {
+  font: 700 10.5px/1 var(--p-font); padding: 4px 6px; border-radius: 7px;
+  background: color-mix(in srgb, var(--p-nav-ink) 12%, transparent); color: var(--p-nav-ink);
+}
+
+/* ---------- список: подписи групп, пункты, «таблетки» ---------- */
+.p-nav__list { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+/* подпись группы — обычный мелкий текст, без цветной точки (правка Раби 13.10.2026) */
+.p-nav__label {
+  flex: 0 1 var(--nav-label-h); min-height: 0; box-sizing: border-box; overflow: hidden;
+  display: flex; align-items: flex-end; gap: 7px; padding: 0 12px 6px;
+  font-size: 11.5px; font-weight: 700; color: var(--p-nav-muted); white-space: nowrap;
+}
+.p-nav__sep { flex: 0 0 auto; height: 1px; margin: 10px 12px; background: color-mix(in srgb, var(--p-nav-ink) 9%, transparent); }
+
+.p-nav__item {
+  position: relative; z-index: 1; flex: 0 1 var(--nav-item-h); min-height: var(--nav-item-min);
+  display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; margin: 0; padding: 0 10px 0 12px;
+  border: 0; border-radius: 13px; background: transparent; box-shadow: none;
+  color: var(--p-nav-ink); font: 600 var(--nav-fs)/1 var(--p-font); text-align: left; white-space: nowrap; cursor: pointer;
+  transition: color .2s ease;
+}
+.p-nav__item > svg { color: var(--p-nav-muted); transition: color .2s ease, transform .3s var(--p-spring, ease); }
+.p-nav__item:hover > svg { color: var(--p-nav-ink); transform: translateX(2px); }
+.p-nav__item[data-active] { color: var(--p-nav-active-ink); font-weight: 700; }
+.p-nav__item[data-active] > svg { color: var(--p-accent); }
+.p-nav__item:focus { outline: none; }
+.p-nav__item:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--p-accent); }
+.p-nav__item[data-active]:focus-visible { box-shadow: inset 0 0 0 2px var(--p-nav-active-ink); }
+.p-nav__item-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* «живой» чип со словами */
+.p-nav__badge {
+  flex: none; margin-left: auto; display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; line-height: 1; white-space: nowrap;
+  background: color-mix(in srgb, var(--p-nav-ink) 10%, transparent); color: var(--p-nav-ink);
+  animation: p-nav-pop .32s cubic-bezier(.2, 1.25, .4, 1) both;
+}
+.p-nav__badge[data-tone="hot"] { background: color-mix(in srgb, var(--p-rim-ember) 24%, transparent); color: var(--p-edge-ember); }
+.p-nav__badge[data-tone="up"] { background: color-mix(in srgb, var(--p-up) 15%, transparent); color: var(--p-up); }
+.p-nav__badge[data-tone="info"] { background: color-mix(in srgb, var(--p-rim-sky) 20%, transparent); color: var(--p-edge-sky); }
+.p-nav__badge[data-tone="violet"] { background: color-mix(in srgb, var(--p-rim-violet) 20%, transparent); color: var(--p-edge-violet); }
+.p-nav__badge[data-tone="warn"] {
+  background: color-mix(in srgb, color-mix(in srgb, var(--p-rim-ember) 50%, var(--p-rim-lime)) 20%, transparent);
+  color: color-mix(in srgb, var(--p-edge-ember) 65%, var(--p-edge-lime));
+}
+/* на активном пункте чип читается на плашке: в тон её текста; «горит» — тем же спокойным тёплым чипом, без огня и свечения */
+.p-nav__item[data-active] .p-nav__badge { background: color-mix(in srgb, var(--p-nav-active-ink) 14%, transparent); color: var(--p-nav-active-ink); }
+.p-nav__item[data-active] .p-nav__badge[data-tone="hot"] { background: color-mix(in srgb, var(--p-rim-ember) 24%, transparent); color: var(--p-edge-ember); }
+
+.p-nav__pill, .p-nav__hover {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 0; height: var(--nav-item-h);
+  border-radius: 13px; pointer-events: none;
+}
+/* активный пункт — спокойная плашка: мягкий фон, без канта и свечения (правка Раби 13.10.2026) */
+.p-nav__pill {
+  background: var(--p-nav-active-bg);
+  box-shadow: none;
+  visibility: hidden;
+  transition: transform .32s var(--nav-spring), height .32s var(--nav-spring);
+}
+.p-nav__pill[data-on] { visibility: visible; }
+.p-navx:not([data-shown]) .p-nav__pill { opacity: 0; }
+.p-navx[data-shown]:not([data-instant]) .p-nav__pill[data-on] {
+  animation: p-nav-fade .3s ease both; animation-delay: calc(60ms + var(--i, 0) * 18ms);
+}
+.p-nav__hover {
+  background: var(--p-nav-hover); opacity: 0;
+  transition: transform .16s var(--nav-glide), height .16s var(--nav-glide), opacity .15s ease;
+}
+.p-nav__hover[data-on] { opacity: 1; }
+.p-nav__pill[data-jump], .p-nav__hover[data-jump] { transition: opacity .15s ease; }
+
+/* ---------- низ: капсула профиля и «Закрепить» ---------- */
+.p-nav__foot {
+  flex: none; display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--p-nav-ink) 8%, transparent);
+}
+.p-nav__me {
+  display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px; border-radius: 17px;
+  background: color-mix(in srgb, var(--p-nav-ink) 6%, transparent);
+}
+.p-nav__me .ui-ava { box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-nav-ink) 16%, transparent); }
+.p-nav__me-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; white-space: nowrap; }
+.p-nav__me-txt > b { font-size: 13px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
+.p-nav__me-txt > span { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 11.5px; font-weight: 600; color: var(--p-nav-muted); }
+.p-nav__demo {
+  font-style: normal; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px;
+  background: color-mix(in srgb, var(--p-accent) 16%, transparent); color: var(--p-accent);
+}
+.p-nav__slot { display: flex; align-items: center; flex: none; }
+.p-nav__ibtn {
+  width: 32px; height: 32px; margin: 0; padding: 0; border: 0; border-radius: 50%; flex: none;
+  display: grid; place-items: center; background: transparent; color: var(--p-nav-muted); box-shadow: none; cursor: pointer;
+  transition: background .2s ease, color .2s ease;
+}
+.p-nav__ibtn:hover { background: var(--p-nav-hover); color: var(--p-nav-ink); }
+.p-nav__ibtn:focus { outline: none; }
+.p-nav__ibtn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--p-accent); }
+
+.p-nav__pin {
+  display: flex; align-items: center; gap: 12px; width: 100%; height: 40px; margin: 0; padding: 0 10px 0 12px; box-sizing: border-box;
+  border: 0; border-radius: 13px; background: transparent; box-shadow: none;
+  color: var(--p-nav-ink); font: 600 13px/1 var(--p-font); white-space: nowrap; text-align: left; cursor: pointer;
+  transition: background .2s ease;
+}
+.p-nav__pin:hover { background: var(--p-nav-hover); }
+.p-nav__pin:focus { outline: none; }
+.p-nav__pin:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--p-accent); }
+.p-nav__pin > svg { color: var(--p-nav-muted); transition: transform .2s ease, color .2s ease; }
+.p-nav__pin[aria-checked="true"] > svg { transform: rotate(45deg); color: var(--p-accent); }
+.p-nav__toggle {
+  position: relative; margin-left: auto; width: 38px; height: 22px; border-radius: 99px; flex: none;
+  background: color-mix(in srgb, var(--p-nav-ink) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--p-nav-ink) 16%, transparent);
+  transition: background .25s ease, box-shadow .25s ease;
+}
+.p-nav__toggle::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--p-nav-ink); box-shadow: 0 1px 3px color-mix(in srgb, var(--p-on-accent) 45%, transparent);
+  transition: transform .35s var(--p-spring, ease);
+}
+.p-nav__pin[aria-checked="true"] .p-nav__toggle { background: var(--p-accent); box-shadow: none; }
+.p-nav__pin[aria-checked="true"] .p-nav__toggle::after { transform: translateX(16px); background: var(--p-on-accent); }
+
+/* ---------- подсказка при первом входе ---------- */
+.p-nav-coach {
+  position: fixed; z-index: var(--p-z-nav, 40); left: 22px; top: 50%; max-width: 270px; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 4px; padding: 11px 38px 12px 14px; border-radius: 16px;
+  background: var(--p-nav-bg); color: var(--p-nav-ink);
+  -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: inset 0 0 0 1px var(--p-nav-rim), var(--p-nav-shadow);
+  font: 600 12px/1.45 var(--p-font); transform: translateY(-50%);
+  animation: p-nav-coach 10s ease 1.2s both;
+}
+.p-nav-coach > b { font-size: 12.5px; font-weight: 800; }
+.p-nav-coach > span { color: var(--p-nav-muted); }
+.p-nav-coach__x {
+  position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; margin: 0; padding: 0; border: 0; border-radius: 50%;
+  display: grid; place-items: center; background: transparent; color: var(--p-nav-muted); cursor: pointer; box-shadow: none;
+}
+.p-nav-coach__x:hover { background: var(--p-nav-hover); color: var(--p-nav-ink); }
+.p-nav-coach__x:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--p-accent); }
+
+/* ---------- мало высоты: всё сжимается, прокрутки нет ---------- */
+@media (max-height: 880px) {
+  .p-navx { --nav-item-h: 32px; --nav-label-h: 23px; }
+  .p-nav { padding-top: 14px; }
+  .p-nav__brand { padding-bottom: 12px; }
+  .p-nav__me { padding: 6px; }
+  .p-nav__pin { height: 34px; }
+  .p-nav__foot { gap: 4px; padding-top: 8px; }
+}
+@media (max-height: 760px) {
+  .p-navx { --nav-item-h: 30px; --nav-item-min: 24px; --nav-fs: 13px; }
+  .p-nav { padding: 12px 10px 10px; }
+  .p-nav__brand { padding-bottom: 8px; }
+  .p-nav__brand-sub { display: none; }
+  .p-nav__brand-tile { width: 30px; height: 30px; border-radius: 10px; font-size: 15px; }
+  .p-nav__hide { width: 30px; height: 30px; margin-top: 0; }
+  /* подписи групп превращаются в тонкие разделители */
+  .p-nav__label { flex: 0 0 1px; height: 1px; margin: 5px 12px; padding: 0; background: color-mix(in srgb, var(--p-nav-ink) 9%, transparent); }
+  .p-nav__label:first-of-type { flex-basis: 1px; margin-top: 0; background: transparent; }
+  .p-nav__label-t { display: none; }
+  .p-nav__sep { margin: 5px 12px; }
+  .p-nav__me .ui-ava { width: 30px !important; height: 30px !important; font-size: 11px !important; }
+  .p-nav__pin { height: 30px; }
+}
+
+/* ================= знак в шапке раздела (NavMark) ================= */
+.p-navmark {
+  position: relative; display: grid; place-items: center; width: 40px; height: 40px; margin: 0; padding: 0; flex: none;
+  border: 0; border-radius: 13px; color: var(--p-nav-ink);
+  /* то же тёмное стекло, что у шторки, чуть светлее — чтобы знак читался и на тёмной «Авроре» */
+  background: linear-gradient(var(--p-nav-hover), var(--p-nav-hover)), var(--p-nav-bg);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  box-shadow: inset 0 0 0 1px var(--p-nav-rim), inset 0 1px 0 color-mix(in srgb, var(--p-nav-ink) 18%, transparent), var(--p-panel-shadow);
+  cursor: pointer; transition: transform .14s ease, box-shadow .2s ease;
+}
+.p-navmark:hover { box-shadow: inset 0 0 0 1px var(--p-nav-rim), inset 0 1px 0 color-mix(in srgb, var(--p-nav-ink) 18%, transparent), 0 0 0 4px color-mix(in srgb, var(--p-accent) 18%, transparent), var(--p-panel-shadow); }
+.p-navmark:active { transform: scale(.94); }
+.p-navmark:focus { outline: none; }
+.p-navmark:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--p-nav-rim), 0 0 0 2px var(--p-accent); }
+.p-navmark > span:not(.p-navmark__badge) { grid-area: 1 / 1; display: grid; place-items: center; transition: opacity .2s ease, transform .3s var(--p-spring, ease); }
+.p-navmark__ic { opacity: 0; transform: translateX(-6px); }
+.p-navmark:hover .p-navmark__p, .p-navmark:focus-visible .p-navmark__p, .p-navmark[aria-expanded="true"] .p-navmark__p { opacity: 0; transform: translateX(6px); }
+.p-navmark:hover .p-navmark__ic, .p-navmark:focus-visible .p-navmark__ic, .p-navmark[aria-expanded="true"] .p-navmark__ic { opacity: 1; transform: none; }
+.p-navmark__badge {
+  position: absolute; top: -5px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box;
+  border-radius: 999px; background: var(--p-rim-ember); color: var(--p-nav-ink);
+  font: 800 10px/18px var(--p-font); text-align: center; pointer-events: none;
+}
+/* «есть что-то горящее» — спокойная метка без свечения и вспышек (правка Раби 13.10.2026) */
+.p-navmark__badge:empty { min-width: 10px; width: 10px; height: 10px; padding: 0; top: -3px; right: -3px; }
+.p-navmark[aria-expanded="true"] .p-navmark__badge { opacity: 0; }
+.p-navmark[data-pinned] { display: none; }
+
+/* ================= шапка раздела: одна строка 64 px ================= */
+/* <header class="p-head"><div class="p-head__menu"><NavMark/></div><h1 class="p-head__title">…</h1><HeadSlotTarget/></header>
+   Слот #p-head-slot (src/crm/HeaderSlot.jsx) по умолчанию display: contents — контролы раздела становятся прямыми
+   элементами строки. Правая группа начинается с .p-head__end (или ставьте <span class="p-head__spacer"/>).
+   Строка никогда не переносится: элементы сжимаются, при нехватке места прячутся подписи кнопок (.p-head__label). */
+.p-head {
+  position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 12px; flex-wrap: nowrap;
+  height: 64px; min-width: 0; padding: 0 24px; box-sizing: border-box; flex: none;
+  background: transparent; color: var(--p-ink); font-family: var(--p-font);
+  container-type: inline-size; container-name: p-head;
+}
+/* шапке нужен «непрозрачный» фон (под ней прокручивается контент) — тот же фон сцены, привязанный к окну */
+.p-head--opaque { background: var(--p-scene); background-attachment: fixed; }
+.p-head__menu { flex: none; display: flex; align-items: center; }
+/* заголовок — просто текст: цветной «огонёк» группы убран (правка Раби 13.10.2026: точек нигде нет) */
+.p-head__title {
+  display: flex; align-items: center; gap: 10px; flex: none; min-width: 0; margin: 0 4px 0 0; /* заголовок не сжимается — сжимаются контролы */
+  font-size: var(--p-fs-2xl, 24px); font-weight: 800; letter-spacing: -.02em; line-height: 1.15; color: var(--p-ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* слот — настоящий блок (если ему сняли display: contents): справа, в одну строку */
+.p-head__slot { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: nowrap; }
+/* всё, что раздел положил в шапку, умеет сжиматься */
+.p-head__slot > * { flex-shrink: 1; min-width: 0; }
+.p-head__slot > .p-head__keep, .p-head__keep { flex-shrink: 0; }   /* главная кнопка не сжимается */
+.p-head__end { margin-left: auto; }                                 /* отсюда начинается правая группа */
+.p-head__spacer { flex: 1 1 auto; min-width: 0; }
+/* узко — подписи у кнопок прячутся, остаются иконки (подсказка — в title) */
+@container p-head (max-width: 980px) {
+  .p-head__label { display: none !important; }
+  /* кнопка без подписи становится круглой кнопкой-иконкой: иконка строго по центру */
+  .p-head .ui-btn:has(> .p-head__label) { width: 40px; padding: 0; gap: 0; }
+  .p-head .ui-btn--sm:has(> .p-head__label) { width: 30px; }
+}
+@container p-head (max-width: 720px) { .p-head__label-sm, .p-head__hide-sm { display: none !important; } }
+
+/* ================= анимации ================= */
+@keyframes p-nav-in { from { opacity: 0; transform: translateX(-12px); } }
+@keyframes p-nav-fade { from { opacity: 0; } }
+@keyframes p-nav-pop { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: none; } }
+/* подсказка первого входа: ручка трижды выглядывает из-за края */
+@keyframes p-nav-nudge { 0%, 100% { transform: translateX(-4px); } 50% { transform: none; } }
+@keyframes p-nav-coach {
+  0% { opacity: 0; transform: translate(-8px, -50%); visibility: visible; }
+  4%, 94% { opacity: 1; transform: translate(0, -50%); visibility: visible; }
+  100% { opacity: 0; transform: translate(-4px, -50%); visibility: hidden; }
+}
+
+/* ================= без анимаций: только прозрачность ================= */
+@media (prefers-reduced-motion: reduce) {
+  .p-nav,
+  .p-navx[data-state="will-open"] .p-nav,
+  .p-navx[data-shown] .p-nav { transform: none !important; }
+  .p-nav { transition: opacity .12s linear, visibility 0s linear .12s !important; }
+  .p-navx[data-shown] .p-nav { transition: opacity .12s linear, visibility 0s !important; }
+  .p-navx[data-state="will-open"] .p-nav { opacity: 0 !important; visibility: hidden !important; }
+  .p-nav__stag, .p-nav__pill, .p-nav__badge, .p-nav-handle, .p-nav-scrim, .p-navmark__badge { animation: none !important; }
+  .p-nav-handle, .p-nav-handle > svg, .p-nav__hide > svg { transition: opacity .12s linear !important; }
+  .p-nav-coach { animation: none !important; opacity: 1; }
+  .p-nav__pill, .p-nav__hover { transition: opacity .12s linear !important; }
+  .p-nav__item > svg, .p-nav__pin > svg, .p-nav__toggle::after, .p-navmark > span { transition: none !important; }
+}
+
+@media print {
+  .p-navx, .p-navmark { display: none !important; }
+}
