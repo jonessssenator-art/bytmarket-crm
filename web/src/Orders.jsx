@@ -166,7 +166,56 @@ export function Orders() {
     </>
   );
 }
-function OrderEditor({ initial, onClose, onSaved }) {
+export function QuickSale() {
+  const c = useCRM();
+  const [selected, setSelected] = useState(null),
+    [editing, setEditing] = useState(null);
+  if (!c.entity || !c.warehouse || !c.data.products)
+    return <p role="status">Загружаем товары…</p>;
+  return (
+    <>
+      <PageHeading>
+        <div>
+          <h1>Продать товар</h1>
+          <p>
+            Найдите товар или отсканируйте штрихкод. Добавьте количество и
+            перейдите к оплате.
+          </p>
+        </div>
+        <Button onClick={() => c.openPage("orders")}>История продаж</Button>
+      </PageHeading>
+      {selected ? (
+        <OrderDetail
+          initial={selected}
+          onClose={() => {
+            setSelected(null);
+            setEditing(null);
+          }}
+          onEdit={(order) => {
+            setEditing(order);
+            setSelected(null);
+          }}
+        />
+      ) : (
+        <OrderEditor
+          key={c.entity + ":" + c.warehouse}
+          inline
+          initial={editing || {}}
+          onClose={() => c.openPage("orders")}
+          onSaved={setSelected}
+        />
+      )}
+    </>
+  );
+}
+function EditorShell({ inline, children, ...props }) {
+  return inline ? (
+    <Panel className="bm-sale-workspace">{children}</Panel>
+  ) : (
+    <Drawer {...props}>{children}</Drawer>
+  );
+}
+function OrderEditor({ initial, onClose, onSaved, inline = false }) {
   const c = useCRM();
   const baseCacheKey = `bytmarket:draft:v1:${c.auth.id}:${initial.entity_id || c.entity}`;
   const cached = () => {
@@ -317,7 +366,8 @@ function OrderEditor({ initial, onClose, onSaved }) {
     return () => clearTimeout(t);
   }, [draft, dirty, valid, c.online]);
   return (
-    <Drawer
+    <EditorShell
+      inline={inline}
       title={initial.id ? "Изменить черновик" : "Новая продажа"}
       onClose={onClose}
       wide
@@ -335,50 +385,65 @@ function OrderEditor({ initial, onClose, onSaved }) {
             ))}
           </div>
         )}
-        <div className="form-grid">
-          <Select
-            label="Организация"
-            required
-            value={draft.entity_id}
-            options={c.meta.entities}
-            onChange={(e) => change({ entity_id: e.target.value })}
-          />
-          <Select
-            label="Склад"
-            required
-            value={draft.warehouse_id}
-            options={c.meta.warehouses}
-            onChange={(e) => change({ warehouse_id: e.target.value })}
-          />
-          <Select
-            label="Тип продажи"
-            value={draft.channel}
-            options={[
-              { value: "retail", label: "Розница" },
-              { value: "wholesale", label: "Опт" },
-            ]}
-            onChange={(e) =>
-              change({
-                channel: e.target.value,
-                entity_id:
-                  c.meta.settings[
-                    e.target.value === "wholesale"
-                      ? "wholesale_entity_id"
-                      : "retail_entity_id"
-                  ] || draft.entity_id,
-              })
-            }
-          />
-          <Select
-            label="Покупатель"
-            required={draft.channel === "wholesale"}
-            value={draft.client_id || ""}
-            options={(c.data.clients || []).filter(
-              (x) => x.kind !== "supplier",
-            )}
-            onChange={(e) => change({ client_id: e.target.value })}
-          />
-        </div>
+        <details
+          className="bm-sale-options"
+          open={draft.channel === "wholesale" || undefined}
+        >
+          <summary>
+            {draft.channel === "wholesale" ? "Опт" : "Розница"} ·{" "}
+            {c.meta.entities.find((x) => x.id === draft.entity_id)?.name} ·{" "}
+            {c.meta.warehouses.find((x) => x.id === draft.warehouse_id)?.name}
+            {draft.client_id
+              ? " · " +
+                (c.data.clients?.find((x) => x.id === draft.client_id)?.name ||
+                  "Покупатель")
+              : " · Без покупателя"}
+          </summary>
+          <div className="form-grid">
+            <Select
+              label="Организация"
+              required
+              value={draft.entity_id}
+              options={c.meta.entities}
+              onChange={(e) => change({ entity_id: e.target.value })}
+            />
+            <Select
+              label="Склад"
+              required
+              value={draft.warehouse_id}
+              options={c.meta.warehouses}
+              onChange={(e) => change({ warehouse_id: e.target.value })}
+            />
+            <Select
+              label="Тип продажи"
+              value={draft.channel}
+              options={[
+                { value: "retail", label: "Розница" },
+                { value: "wholesale", label: "Опт" },
+              ]}
+              onChange={(e) =>
+                change({
+                  channel: e.target.value,
+                  entity_id:
+                    c.meta.settings[
+                      e.target.value === "wholesale"
+                        ? "wholesale_entity_id"
+                        : "retail_entity_id"
+                    ] || draft.entity_id,
+                })
+              }
+            />
+            <Select
+              label="Покупатель"
+              required={draft.channel === "wholesale"}
+              value={draft.client_id || ""}
+              options={(c.data.clients || []).filter(
+                (x) => x.kind !== "supplier",
+              )}
+              onChange={(e) => change({ client_id: e.target.value })}
+            />
+          </div>
+        </details>
         <label className="field">
           <span>Сканируйте штрихкод или найдите товар</span>
           <input
@@ -400,7 +465,7 @@ function OrderEditor({ initial, onClose, onSaved }) {
           />
         </label>
         <div className="product-search-results">
-          {products.slice(0, 8).map((p) => (
+          {(q.trim() ? products.slice(0, 8) : []).map((p) => (
             <div key={p.id} className="product-result">
               <div>
                 <strong>{p.name}</strong>
@@ -490,65 +555,78 @@ function OrderEditor({ initial, onClose, onSaved }) {
         ) : (
           <Empty title="Корзина пуста">Добавьте товар из поиска.</Empty>
         )}
-        <div className="form-grid">
-          <Select
-            label="Получение"
-            value={draft.fulfillment}
-            options={[
-              { value: "pickup", label: "Самовывоз / выдача сейчас" },
-              { value: "delivery", label: "Курьерская доставка" },
-            ]}
-            onChange={(e) => change({ fulfillment: e.target.value })}
-          />
-          <Field
-            label="Срок оплаты"
-            type="date"
-            value={draft.due_date || ""}
-            onChange={(e) => change({ due_date: e.target.value })}
-          />
-          {draft.fulfillment === "delivery" &&
-            (
-              c.data.clients?.find((x) => x.id === draft.client_id)
-                ?.addresses || []
-            ).length > 0 && (
-              <Select
-                label="Торговая точка клиента"
-                value={(
-                  c.data.clients.find((x) => x.id === draft.client_id)
-                    ?.addresses || []
-                )
-                  .findIndex((a) => a.address === draft.address)
-                  .toString()}
-                options={(
-                  c.data.clients.find((x) => x.id === draft.client_id)
-                    ?.addresses || []
-                ).map((a, i) => ({
-                  value: String(i),
-                  label: a.name + " · " + a.address,
-                }))}
-                onChange={(e) => {
-                  const a = c.data.clients.find((x) => x.id === draft.client_id)
-                    ?.addresses?.[Number(e.target.value)];
-                  if (a) change({ address: a.address });
-                }}
+        <details
+          className="bm-sale-options"
+          open={draft.fulfillment === "delivery" || undefined}
+        >
+          <summary>
+            {draft.fulfillment === "delivery"
+              ? "Курьерская доставка"
+              : "Выдача в магазине"}
+            {draft.due_date ? " · Оплата до " + date(draft.due_date) : ""} ·
+            Условия и комментарий
+          </summary>
+          <div className="form-grid">
+            <Select
+              label="Получение"
+              value={draft.fulfillment}
+              options={[
+                { value: "pickup", label: "Самовывоз / выдача сейчас" },
+                { value: "delivery", label: "Курьерская доставка" },
+              ]}
+              onChange={(e) => change({ fulfillment: e.target.value })}
+            />
+            <Field
+              label="Срок оплаты"
+              type="date"
+              value={draft.due_date || ""}
+              onChange={(e) => change({ due_date: e.target.value })}
+            />
+            {draft.fulfillment === "delivery" &&
+              (
+                c.data.clients?.find((x) => x.id === draft.client_id)
+                  ?.addresses || []
+              ).length > 0 && (
+                <Select
+                  label="Торговая точка клиента"
+                  value={(
+                    c.data.clients.find((x) => x.id === draft.client_id)
+                      ?.addresses || []
+                  )
+                    .findIndex((a) => a.address === draft.address)
+                    .toString()}
+                  options={(
+                    c.data.clients.find((x) => x.id === draft.client_id)
+                      ?.addresses || []
+                  ).map((a, i) => ({
+                    value: String(i),
+                    label: a.name + " · " + a.address,
+                  }))}
+                  onChange={(e) => {
+                    const a = c.data.clients.find(
+                      (x) => x.id === draft.client_id,
+                    )?.addresses?.[Number(e.target.value)];
+                    if (a) change({ address: a.address });
+                  }}
+                />
+              )}
+            {draft.fulfillment === "delivery" && (
+              <Field
+                label="Адрес доставки"
+                required
+                value={draft.address || ""}
+                onChange={(e) => change({ address: e.target.value })}
               />
             )}
-          {draft.fulfillment === "delivery" && (
-            <Field
-              label="Адрес доставки"
-              required
-              value={draft.address || ""}
-              onChange={(e) => change({ address: e.target.value })}
-            />
-          )}
-          <label className="field">
-            <span>Комментарий</span>
-            <textarea
-              value={draft.notes || ""}
-              onChange={(e) => change({ notes: e.target.value })}
-            />
-          </label>
-        </div>
+            <label className="field">
+              <span>Комментарий</span>
+              <textarea
+                value={draft.notes || ""}
+                onChange={(e) => change({ notes: e.target.value })}
+              />
+            </label>
+          </div>
+        </details>
         {cacheNotice && <p className="notice">{cacheNotice}</p>}
         {saved && (
           <div className="total-line">
@@ -561,18 +639,15 @@ function OrderEditor({ initial, onClose, onSaved }) {
             {error}
           </div>
         )}
-        <p className="muted">
-          Сохранение не резервирует товар. Подтверждение заказа повторно
-          проверит текущий остаток, условия и права.
-        </p>
+        <p className="muted">До подтверждения товар не резервируется.</p>
         <footer className="form-actions">
-          <Button onClick={onClose}>Закрыть</Button>
+          {!inline && <Button onClick={onClose}>Закрыть</Button>}
           <Button
             disabled={!valid || !c.online}
             busy={busy}
             onClick={() => save(false).catch(() => {})}
           >
-            Рассчитать и сохранить
+            Сохранить черновик
           </Button>
           <Button
             primary
@@ -580,11 +655,11 @@ function OrderEditor({ initial, onClose, onSaved }) {
             busy={busy}
             onClick={() => save(true).catch(() => {})}
           >
-            Сохранить и открыть
+            К подтверждению и оплате
           </Button>
         </footer>
       </div>
-    </Drawer>
+    </EditorShell>
   );
 }
 function OrderDetail({ initial, onClose, onEdit }) {

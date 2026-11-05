@@ -22,11 +22,12 @@ import {
   Menu,
   CalendarDays,
   X,
+  MoreHorizontal,
 } from "lucide-react";
 import { api, setCsrf } from "./api.js";
 import { Button, Field, Empty } from "./ui.jsx";
 import { Products, Clients, Stock, Administration } from "./Records.jsx";
-import { Orders } from "./Orders.jsx";
+import { Orders, QuickSale } from "./Orders.jsx";
 import {
   Finance,
   Deliveries,
@@ -295,6 +296,7 @@ export default function App() {
   const allowed = (p) =>
     (p === "visits" && has("rep")) ||
     p === "home" ||
+    p === "more" ||
     (p === "products" &&
       has("seller", "manager", "rep", "accountant", "warehouse")) ||
     (p === "clients" && has("seller", "manager", "rep", "accountant")) ||
@@ -309,6 +311,8 @@ export default function App() {
     (p === "settings" && has());
   const home = roles.includes("owner") ? (
     <Dashboard />
+  ) : roles.includes("seller") ? (
+    <QuickSale />
   ) : roles.includes("rep") ? (
     <Visits />
   ) : roles.includes("courier") || roles.includes("dispatcher") ? (
@@ -320,6 +324,56 @@ export default function App() {
   ) : (
     <Orders />
   );
+  const homeLabel = roles.includes("owner")
+    ? "Главное"
+    : roles.includes("seller")
+      ? "Продать товар"
+      : roles.includes("rep")
+        ? "Мой день"
+        : roles.includes("warehouse")
+          ? "Мой склад"
+          : roles.includes("courier")
+            ? "Мои доставки"
+            : roles.includes("dispatcher")
+              ? "Доставки"
+              : roles.includes("accountant")
+                ? "Деньги и документы"
+                : "Заказы клиентов";
+  const primaryByRole = {
+    owner: ["orders", "products", "finance", "reports"],
+    seller: ["orders", "products", "clients"],
+    manager: ["clients", "products", "finance"],
+    rep: ["clients", "orders", "products", "finance"],
+    warehouse: ["orders", "purchases", "products"],
+    accountant: ["orders", "clients", "reports"],
+    dispatcher: [],
+    courier: ["finance"],
+  };
+  const primary =
+    primaryByRole[
+      [
+        "owner",
+        "seller",
+        "rep",
+        "courier",
+        "dispatcher",
+        "accountant",
+        "warehouse",
+        "manager",
+      ].find((role) => roles.includes(role))
+    ] || [];
+  const descriptions = {
+    orders: "Продажи, повторные заказы и возвраты",
+    clients: "Покупатели, контакты и условия оплаты",
+    products: "Каталог, цены и упаковки",
+    stock: "Приёмка, остатки и перемещения",
+    purchases: "Заказы поставщикам и ожидаемые поставки",
+    finance: "Оплаты, расходы и задолженность",
+    deliveries: "Назначение и выполнение доставок",
+    reports: "Прибыль, товары, сотрудники и точки роста",
+    settings: "Организации, сотрудники и правила работы",
+    visits: "Маршрут, результаты визитов и акции",
+  };
   const pages = {
     home,
     visits: <Visits />,
@@ -332,6 +386,38 @@ export default function App() {
     deliveries: <Deliveries />,
     reports: <Overview reportOnly />,
     settings: <Administration />,
+    more: (
+      <section className="bm-all-sections" aria-label="Все разделы">
+        <button
+          className="bm-section-link"
+          onClick={() => openPage("home", { tab: "tasks" })}
+        >
+          <CalendarDays size={20} />
+          <span>
+            <strong>Мои задачи</strong>
+            <small>Звонки, напоминания и поручения</small>
+          </span>
+        </button>
+        {[
+          ...nav.filter(([id]) => id !== "home"),
+          ["visits", "Визиты и акции", CalendarDays],
+        ]
+          .filter(([id]) => allowed(id))
+          .map(([id, label, Icon]) => (
+            <button
+              key={id}
+              className="bm-section-link"
+              onClick={() => openPage(id)}
+            >
+              <Icon size={20} />
+              <span>
+                <strong>{label}</strong>
+                <small>{descriptions[id]}</small>
+              </span>
+            </button>
+          ))}
+      </section>
+    ),
   };
   const value = {
     auth,
@@ -399,70 +485,20 @@ export default function App() {
           }
           groups={[
             {
-              key: "today",
-              title: "Сегодня",
-              tone: "ember",
+              key: "daily",
               items: [
-                {
-                  key: "home",
-                  label: roles.includes("owner")
-                    ? "Обзор"
-                    : roles.includes("rep")
-                      ? "Мой день"
-                      : "Моё рабочее место",
-                  icon: LayoutDashboard,
-                },
-                ...(allowed("visits")
-                  ? [
-                      {
-                        key: "visits",
-                        label: "Визиты и акции",
-                        icon: CalendarDays,
-                      },
-                    ]
-                  : []),
+                { key: "home", label: homeLabel, icon: LayoutDashboard },
+                ...nav
+                  .filter(([id]) => primary.includes(id) && allowed(id))
+                  .map(([key, label, icon]) => ({ key, label, icon })),
               ],
             },
             {
-              key: "trade",
-              title: "Торговля",
-              tone: "sky",
-              items: nav
-                .filter(
-                  ([id]) =>
-                    ["orders", "clients", "deliveries"].includes(id) &&
-                    allowed(id),
-                )
-                .map(([key, label, icon]) => ({ key, label, icon })),
-            },
-            {
-              key: "goods",
-              title: "Товар и склад",
-              tone: "gold",
-              items: nav
-                .filter(
-                  ([id]) =>
-                    ["products", "stock", "purchases"].includes(id) &&
-                    allowed(id),
-                )
-                .map(([key, label, icon]) => ({ key, label, icon })),
-            },
-            {
-              key: "control",
-              title: "Управление",
-              tone: "lime",
-              items: nav
-                .filter(
-                  ([id]) => ["finance", "reports"].includes(id) && allowed(id),
-                )
-                .map(([key, label, icon]) => ({ key, label, icon })),
-            },
-            {
-              key: "system",
+              key: "other",
               separator: true,
-              items: allowed("settings")
-                ? [{ key: "settings", label: "Настройки", icon: Settings }]
-                : [],
+              items: [
+                { key: "more", label: "Все разделы", icon: MoreHorizontal },
+              ],
             },
           ]}
           badges={{
@@ -493,14 +529,12 @@ export default function App() {
             </div>
             <h1 className="p-head__title">
               {page === "home"
-                ? roles.includes("owner")
-                  ? "Обзор"
-                  : roles.includes("rep")
-                    ? "Мой день"
-                    : "Моё рабочее место"
-                : page === "visits"
-                  ? "Визиты и акции"
-                  : nav.find((n) => n[0] === page)?.[1]}
+                ? homeLabel
+                : page === "more"
+                  ? "Все разделы"
+                  : page === "visits"
+                    ? "Визиты и акции"
+                    : nav.find((n) => n[0] === page)?.[1]}
             </h1>
             <GlobalSearch />
             <HeadSlotTarget style={{ display: "flex" }} />
@@ -570,7 +604,26 @@ export default function App() {
             )}
             {allowed(page) ? (
               <PageBoundary key={page} onRecover={refresh}>
-                <TradingWorkspace page={page}>{pages[page]}</TradingWorkspace>
+                <TradingWorkspace
+                  page={
+                    page === "home" &&
+                    !roles.includes("owner") &&
+                    !roles.includes("seller")
+                      ? roles.includes("rep")
+                        ? "visits"
+                        : roles.includes("courier") ||
+                            roles.includes("dispatcher")
+                          ? "deliveries"
+                          : roles.includes("accountant")
+                            ? "finance"
+                            : roles.includes("warehouse")
+                              ? "stock"
+                              : "orders"
+                      : page
+                  }
+                >
+                  {pages[page]}
+                </TradingWorkspace>
               </PageBoundary>
             ) : (
               <Empty title="Раздел недоступен">

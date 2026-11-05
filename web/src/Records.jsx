@@ -488,6 +488,14 @@ export function Stock() {
     [q, setQ] = useState(c.navigationTarget?.q || ""),
     [operation, setOperation] = useState(null),
     [tab, setTab] = useState("balances");
+  useEffect(() => {
+    if (c.navigationTarget?.q !== undefined) setQ(c.navigationTarget.q);
+    if (
+      c.navigationTarget?.action === "receive" &&
+      (c.meta.permissions.can_stock || c.has("accountant"))
+    )
+      setOperation("receive");
+  }, [c.navigationTarget?.key]);
   const ops = {
     receive: "Приход товара",
     adjust: "Корректировка остатка",
@@ -578,12 +586,14 @@ export function Stock() {
         </div>
         {tab === "balances" ? (
           <Table
-            rows={(c.data.stock || []).map((r) => ({
-              ...r,
-              physical_qty: r.on_hand + r.quarantine,
-            })).filter((r) =>
-              (r.name + " " + r.sku).toLowerCase().includes(q.toLowerCase()),
-            )}
+            rows={(c.data.stock || [])
+              .map((r) => ({
+                ...r,
+                physical_qty: r.on_hand + r.quarantine,
+              }))
+              .filter((r) =>
+                (r.name + " " + r.sku).toLowerCase().includes(q.toLowerCase()),
+              )}
             empty="Остатков ещё нет. Оформите фактический приход товара."
             columns={[
               {

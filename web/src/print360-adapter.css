@@ -57,3 +57,41 @@ body{background:var(--p-scene);background-attachment:fixed;color:var(--p-ink);fo
 .p-nav__me:has(.bm-demo-role) { flex-wrap: wrap; }
 .p-nav__me:has(.bm-demo-role) .p-nav__slot { flex: 1 0 100%; }
 .bm-demo-role { width: 100%; min-width: 0; min-height: 36px; padding: 6px 8px; border: 1px solid var(--p-nav-muted); border-radius: 6px; background: var(--p-nav-bg, #fff); color: var(--p-nav-ink, #17212b); font: inherit; font-size: 13px; }
+
+/* Daily work uses the existing Print 360 shell with fewer simultaneous choices. */
+.bm-all-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.bm-section-link { display: flex; align-items: center; gap: 16px; text-align: left; padding: 20px; border: 1px solid #d4dfe3; border-radius: 14px; background: #fff; color: #19343e; cursor: pointer; }
+.bm-section-link:hover { background: #f0f6f2; border-color: #749568; }
+.bm-section-link span { display: grid; gap: 6px; }
+.bm-section-link strong { font-size: 16px; }
+.bm-section-link small { font-size: 13px; line-height: 1.5; color: #506570; }
+.bm-work-tabs--simple { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+.bm-work-tabs--simple > select { width: auto; max-width: 100%; min-height: 38px; padding: 6px 10px; border: 1px solid #c6d3d9; border-radius: 8px; color: #263d47; background: #fff; font: inherit; font-size: 13px; }
+.bm-simple-home { display: grid; gap: 24px; }
+.bm-simple-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.bm-simple-heading h2 { font-size: 22px; margin: 0; }
+.bm-simple-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 24px 0; border-top: 1px solid #cdd9de; border-bottom: 1px solid #cdd9de; gap: 24px; }
+.bm-simple-metrics dt { font-size: 14px; color: #405964; }
+.bm-simple-metrics dd { margin: 8px 0; }
+.bm-simple-metrics dd button { border: 0; background: transparent; padding: 0; text-align: left; color: #15333e; font: inherit; font-size: clamp(21px, 2.2vw, 32px); font-weight: 700; cursor: pointer; font-variant-numeric: tabular-nums; }
+.bm-simple-metrics dd button:hover { text-decoration: underline; }
+.bm-simple-metrics small { display: block; line-height: 1.5; color: #526771; font-size: 12px; }
+.bm-daily-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.bm-simple-home .bm-action-row { min-width: 0; }
+.bm-simple-home .bm-action-row span { min-width: 0; flex: 1; }
+.bm-simple-home .bm-action-row small { overflow-wrap: anywhere; }
+.bm-sale-options { margin-bottom: 16px; border-bottom: 1px solid #d3dfe4; padding-bottom: 12px; }
+.bm-sale-options summary { cursor: pointer; font-size: 14px; line-height: 1.6; color: #405964; }
+.bm-sale-options[open] summary { margin-bottom: 14px; }
+.bm-sale-workspace .drawer-body { padding: 24px; }
+.bm-sale-workspace .product-search-results:empty { display: none; }
+@media (max-width: 760px) {
+  .bm-all-sections { grid-template-columns: 1fr; }
+  .bm-simple-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 14px; }
+  .bm-simple-metrics dd button { font-size: 23px; }
+  .bm-simple-heading h2 { font-size: 20px; }
+  .bm-daily-actions > button { flex: 1 1 100%; }
+  .bm-sale-workspace .drawer-body { padding: 16px; }
+  .bm-simple-home .bm-action-row { gap: 10px; }
+  .bm-work-tabs--simple > select { width: 100%; }
+}

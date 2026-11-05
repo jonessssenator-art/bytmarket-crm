@@ -85,8 +85,11 @@ function exportRows(name, headers, rows) {
 
 export default function TradingWorkspace({ page, children }) {
   const c = useCRM();
-  const [tab, setTab] = useState("main");
-  useEffect(() => setTab("main"), [page, c.navigationTarget?.key]);
+  const [tab, setTab] = useState(() => c.navigationTarget?.tab || "main");
+  useEffect(
+    () => setTab(c.navigationTarget?.tab || "main"),
+    [page, c.navigationTarget?.key],
+  );
   const extra =
     {
       products: [["photos", "Фотографии"]],
@@ -164,25 +167,56 @@ export default function TradingWorkspace({ page, children }) {
     rights: <Rights />,
     digest: <Digest />,
   };
+  if (page === "home" && tab === "main") return children;
   return (
     <>
-      <div className="bm-work-tabs">
+      <div className="bm-work-tabs bm-work-tabs--simple">
         <Segmented
           options={[
             {
               value: "main",
               label:
                 page === "home"
-                  ? "Обзор"
+                  ? "Главное"
                   : page === "reports"
                     ? "Прибыль и продажи"
-                    : "Основное",
+                    : {
+                        orders: "Заказы",
+                        stock: "Остатки",
+                        clients: "Клиенты",
+                        products: "Товары",
+                        finance: "Деньги",
+                        purchases: "Закупки",
+                        deliveries: "Доставки",
+                        visits: "Визиты",
+                        settings: "Основные настройки",
+                      }[page] || "Основное",
             },
-            ...safe.map(([value, label]) => ({ value, label })),
+            ...(page === "reports"
+              ? safe
+                  .filter(([key]) =>
+                    ["details", "employees", "growth"].includes(key),
+                  )
+                  .map(([value, label]) => ({ value, label }))
+              : []),
           ]}
           value={tab}
           onChange={setTab}
         />
+        <select
+          aria-label={page === "reports" ? "Другие отчёты" : "Другие действия"}
+          value={safe.some(([key]) => key === tab) ? tab : ""}
+          onChange={(event) => setTab(event.target.value || "main")}
+        >
+          <option value="">
+            {page === "reports" ? "Другие отчёты" : "Другие действия"}
+          </option>
+          {safe.map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
       </div>
       {tab === "main" ? (
         children
