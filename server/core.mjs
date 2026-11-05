@@ -557,14 +557,17 @@ export function registerCore(add, ctx) {
     );
     res.setHeader(
       "Set-Cookie",
-      `bytmarket_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200${req.socket.encrypted ? "; Secure" : ""}`,
+      `bytmarket_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200${req.socket.encrypted || ctx.secureCookies ? "; Secure" : ""}`,
     );
     return { user: publicUser(user), csrf };
   };
   add(
     "GET",
     "/auth/status",
-    () => ({ needs_setup: !get("SELECT id FROM users LIMIT 1") }),
+    () => ({
+      needs_setup: !get("SELECT id FROM users LIMIT 1"),
+      demo: !!ctx.demoMode,
+    }),
     { public: true },
   );
   add(
@@ -650,7 +653,43 @@ export function registerCore(add, ctx) {
     },
     { public: true },
   );
-  add("GET", "/auth/me", ({ user, session }) => ({ user, csrf: session.csrf }));
+  const demoUser = (role) => {
+    if (!ROLES.includes(role)) fail(400, "Неизвестная роль");
+    const row = get(
+      "SELECT u.* FROM users u JOIN demo_access d ON d.user_id=u.id WHERE d.role=? AND u.active=1",
+      role,
+    );
+    if (!row || !parse(row.roles).includes(role))
+      fail(409, "Тестовая роль недоступна");
+    return row;
+  };
+  if (ctx.demoMode) {
+    add("GET", "/auth/demo-roles", () => ROLES, { public: true });
+    add(
+      "POST",
+      "/auth/demo",
+      ({ body, req, res, session }) =>
+        ctx.tx(() => {
+          const row = demoUser(body.role);
+          if (session) run("DELETE FROM sessions WHERE id=?", session.id);
+          const result = setSession(req, res, row);
+          return { ...result, user: { ...result.user, demo: true } };
+        }),
+      { public: true },
+    );
+  }
+  add(
+    "GET",
+    "/auth/me",
+    ({ user, session, req, res }) => {
+      if (!user && ctx.demoMode) {
+        const result = ctx.tx(() => setSession(req, res, demoUser("owner")));
+        return { ...result, user: { ...result.user, demo: true } };
+      }
+      return { user: { ...user, demo: !!ctx.demoMode }, csrf: session.csrf };
+    },
+    { public: !!ctx.demoMode },
+  );
   add("POST", "/auth/logout", ({ session, res }) => {
     run("DELETE FROM sessions WHERE id=?", session.id);
     res.setHeader(
@@ -776,6 +815,15 @@ export function registerCore(add, ctx) {
   });
   add("PATCH", "/users/:id", ({ user, body, params }) => {
     ctx.requireRole(user, "owner");
+    if (
+      ctx.demoMode &&
+      get("SELECT role FROM demo_access WHERE user_id=?", params.id) &&
+      ((body.active !== undefined && !body.active) || body.roles !== undefined)
+    )
+      fail(
+        409,
+        "Роли переключателя должны оставаться активными. Для экспериментов создайте отдельного сотрудника.",
+      );
     const old = get("SELECT * FROM users WHERE id=?", params.id);
     if (!old) fail(404, "Пользователь не найден");
     const f = userFields(body, old);

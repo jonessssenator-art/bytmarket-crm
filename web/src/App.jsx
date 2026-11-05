@@ -361,14 +361,42 @@ export default function App() {
             role: roles.map((r) => roleNames[r] || r).join(", "),
           }}
           brand={{ name: "Розница и опт · Астрахань" }}
-          onLogout={async () => {
-            try {
-              await api("/auth/logout", { method: "POST", body: {} });
-              reset();
-            } catch (e) {
-              setToast(e.message);
-            }
-          }}
+          footerSlot={
+            auth.demo ? (
+              <select
+                aria-label="Выбрать роль"
+                className="bm-demo-role"
+                value={roles[0]}
+                onChange={async (event) => {
+                  const role = event.target.value;
+                  try {
+                    await api("/auth/demo", { method: "POST", body: { role } });
+                    window.location.reload();
+                  } catch (e) {
+                    setToast(e.message);
+                  }
+                }}
+              >
+                {Object.entries(roleNames).map(([role, label]) => (
+                  <option key={role} value={role}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            ) : undefined
+          }
+          onLogout={
+            auth.demo
+              ? undefined
+              : async () => {
+                  try {
+                    await api("/auth/logout", { method: "POST", body: {} });
+                    reset();
+                  } catch (e) {
+                    setToast(e.message);
+                  }
+                }
+          }
           groups={[
             {
               key: "today",

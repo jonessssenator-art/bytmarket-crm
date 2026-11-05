@@ -5,7 +5,12 @@ import { resolve, join } from "node:path";
 
 const dbPath = process.env.DB_PATH || "data/bytmarket.sqlite";
 const backupDir = resolve(process.env.BACKUP_DIR || "backups");
-const app = createApp({ dbPath, staticDir: resolve("dist") });
+const app = createApp({
+  dbPath,
+  staticDir: resolve("dist"),
+  demoMode: process.env.DEMO_MODE === "1",
+  secureCookies: process.env.SECURE_COOKIES === "1",
+});
 let backupRunning = null,
   stopping = false;
 async function snapshot() {

@@ -54,3 +54,6 @@ body{background:var(--p-scene);background-attachment:fixed;color:var(--p-ink);fo
 /* Only the foreground dialog scrolls; its edge must not move the page behind. */
 .bm-modal, .bm-overlay { overscroll-behavior-y: contain; }
 .bm-modal-head { flex-shrink: 0; }
+.p-nav__me:has(.bm-demo-role) { flex-wrap: wrap; }
+.p-nav__me:has(.bm-demo-role) .p-nav__slot { flex: 1 0 100%; }
+.bm-demo-role { width: 100%; min-width: 0; min-height: 36px; padding: 6px 8px; border: 1px solid var(--p-nav-muted); border-radius: 6px; background: var(--p-nav-bg, #fff); color: var(--p-nav-ink, #17212b); font: inherit; font-size: 13px; }

@@ -1,0 +1,9 @@
+node_modules
+.git
+data
+backups
+output
+.env*
+.playwright-cli
+dist
+*.sqlite*

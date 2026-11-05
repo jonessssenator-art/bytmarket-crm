@@ -3,12 +3,30 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { readFileSync, statSync, realpathSync } from "node:fs";
 import { resolve, extname, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { gzipSync } from "node:zlib";
 import { createDb } from "./db.mjs";
 import { installCore, registerCore, publicUser, fail } from "./core.mjs";
 import { initExtensions, registerExtensions } from "./extensions.mjs";
 import { registerCompletion } from "./completion.mjs";
 import { registerMaintenance } from "./maintenance.mjs";
 const digest = (s) => createHash("sha256").update(s).digest("hex");
+function sendBody(req, res, value) {
+  let body = Buffer.isBuffer(value) ? value : Buffer.from(value);
+  res.setHeader("Vary", "Accept-Encoding");
+  const acceptsGzip = String(req.headers["accept-encoding"] || "")
+    .split(",")
+    .some((entry) =>
+      /^gzip(?:\s*;\s*q=(?:1(?:\.0*)?|0?\.[0-9]*[1-9][0-9]*))?$/i.test(
+        entry.trim(),
+      ),
+    );
+  if (body.length > 1024 && acceptsGzip) {
+    body = gzipSync(body);
+    res.setHeader("Content-Encoding", "gzip");
+  }
+  res.setHeader("Content-Length", body.length);
+  res.end(req.method === "HEAD" ? undefined : body);
+}
 const safeEqual = (a, b) =>
   typeof a === "string" &&
   typeof b === "string" &&
@@ -17,10 +35,30 @@ const safeEqual = (a, b) =>
 export function createApp({
   dbPath = process.env.DB_PATH || "data/bytmarket.sqlite",
   staticDir = resolve("dist"),
+  demoMode = false,
+  secureCookies = false,
 } = {}) {
   const db = createDb(dbPath);
   initExtensions(db);
   const ctx = installCore({ db });
+  ctx.secureCookies = secureCookies;
+  if (demoMode) {
+    const marked = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='demo_access'",
+      )
+      .get();
+    if (
+      !marked ||
+      db.prepare("SELECT count(*) n FROM demo_access").get().n !== 8
+    ) {
+      db.close();
+      throw new Error(
+        "Режим без паролей разрешён только для подготовленной демонстрационной базы",
+      );
+    }
+    ctx.demoMode = true;
+  }
   const routes = [];
   const add = (method, path, handler, options = {}) => {
     const names = [];
@@ -104,7 +142,7 @@ export function createApp({
           extname(real) === ".html" ? "no-cache" : "public, max-age=3600",
         );
         res.statusCode = 200;
-        res.end(req.method === "HEAD" ? undefined : readFileSync(real));
+        sendBody(req, res, readFileSync(real));
         return;
       }
       res.setHeader("Cache-Control", "no-store");
@@ -279,7 +317,7 @@ export function createApp({
       } else result = await route.handler(args);
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/json; charset=utf-8");
-      res.end(JSON.stringify(result ?? { ok: true }));
+      sendBody(req, res, JSON.stringify(result ?? { ok: true }));
     } catch (error) {
       if (res.headersSent) {
         res.destroy();

@@ -1,0 +1,12 @@
+services:
+  crm:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3100:3000"
+    environment:
+      DEMO_MODE: "1"
+      SECURE_COOKIES: "1"
+    volumes:
+      - ./data/hosting-demo:/var/lib/bytmarket
+    stop_grace_period: 30s
